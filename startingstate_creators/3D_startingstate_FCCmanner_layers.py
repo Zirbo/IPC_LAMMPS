@@ -3,42 +3,43 @@
 # writes a configuration with a plane structure of ipcs.
 
 import argparse
-from math import floor
+from math import cos, sin, sqrt, pi, floor
 from numpy.random import ranf
 
-helpString = """Creates a LAMMPS starting configuration with a single square plane.\n
-Suggested values for a cubic box: 12 1.1 1.1 0 12.1 12.1 0.16\n
-Suggested values for an elongates box for gravity experiments: 12 1.1 1.1 sz 12.1 Lz 0.16\n"""
+helpString = """Creates a LAMMPS starting configuration with a single flower-like hex plane.\n
+Suggested values: 14 12 1.8 1.2 1.2 12.4 12.4 0.16\n"""
 
 parser = argparse.ArgumentParser(description=helpString)
-parser.add_argument('particlePerSide', metavar='nPx', type=int, help='number of particles in the X-Y plane')
+parser.add_argument('particlePerSideX', metavar='nPx', type=int, help='number of particles in the X side')
+parser.add_argument('particlePerSideY', metavar='nPy', type=int, help='number of particles in the Y side')
+parser.add_argument('zOrigin', metavar='z0', type=float, help='height of the plane')
 parser.add_argument('spacing', metavar='s', type=float, help='spacing of the fluid in the x-y plane')
 parser.add_argument('spacingZ', metavar='sz', type=float, help='spacing of the fluid in the z direction')
-parser.add_argument('zOrigin', metavar='z0', type=float, help='height of the plane')
 parser.add_argument('boxSide', metavar='L', type=float, help='size of the simulation box side base (x-y)')
 parser.add_argument('boxSideZ', metavar='Lz', type=float, help='height of the simulation box side (z)')
 parser.add_argument('ecc', metavar='e', type=float, help='eccentricity of the IPCs')
 args = parser.parse_args()
 print(args)
 
-outputFile = open('IPC_startingstate_FCCsquare.txt','w')
+outputFile = open('IPC_startingstate_manner.txt','w')
 
 L = args.boxSide
 Lz = args.boxSideZ
 zOrigin = args.zOrigin
-if zOrigin == 0:
+if zOrigin < 0.25:
     zOrigin = 0.25
 spacing = args.spacing
 spacingZ = args.spacingZ
 ecc = args.ecc
-nPlaneX = args.particlePerSide
-nFluidX = round(L/spacing)
-nFluidY = round(L/spacing)
-nFluidZ = round((Lz-zOrigin)/spacingZ) - 1
+nWaferX = args.particlePerSideX
+nWaferY = args.particlePerSideY
+nFluidX = int(L/spacing)
+nFluidY = int(L/spacing)
+nFluidZ = int((Lz-zOrigin)/spacingZ)
 
-print(nPlaneX, spacing, L, ecc, nFluidX, nFluidY, nFluidZ)
+print(nWaferX, nWaferY, spacing, L, ecc, nFluidX, nFluidY, nFluidZ)
 
-nIPCs = nPlaneX*nPlaneX + nFluidX*nFluidY*nFluidZ
+nIPCs = nWaferX*nWaferY + nFluidX*nFluidY*nFluidZ
 
 def absolutePBC(x):
     return x - L*floor(x/L)
@@ -46,13 +47,20 @@ def absolutePBC(x):
 def absolutePBCz(z):
     return z - Lz*floor(z/Lz)
 
-p = [ [ ecc, 0., 0. ] ,
-      [ 0., ecc, 0. ] ]
+alpha = -.10*pi
+beta  = .65*pi
+gamma = .25*pi
+cos30 = sqrt(3)*.5
+p = [ [ ecc*cos(alpha), ecc*sin(alpha), 0.  ] ,
+      [ ecc*cos(beta),  ecc*sin(beta),  0.  ] ,
+      [ ecc*cos(gamma), ecc*sin(gamma), 0.  ] ,
+      [ 0.            , 0.            , ecc ] ,
+      [ ecc*cos(gamma), ecc*sin(gamma), 0.  ] ]
 
 
 outputFile.write("# 3D starting configuration for LAMMPS created with a script available at\n")
-outputFile.write("# https://github.com/Zirbo/IPCsim/tree/master/lammps\n")
-outputFile.write("# The plane particles are from 1 to " + str(nPlaneX*nPlaneX))
+outputFile.write("# https://github.com/Zirbo/IPCsim/tree/master/lammps")
+outputFile.write("# The plane particles are from 1 to " + str(nWaferX*nWaferY))
 
 outputFile.write("\n")
 outputFile.write("\n" + str(3*nIPCs).rjust(16) + " atoms")
@@ -70,7 +78,7 @@ outputFile.write("\n" + '{:3.8f}'.format(0.0).rjust(16) +
 outputFile.write("\n" + '{:3.8f}'.format(0.0).rjust(16) +
                         '{:3.8f}'.format(L).rjust(16) + "     ylo yhi")
 outputFile.write("\n" + '{:3.8f}'.format(0.0).rjust(16) +
-                        '{:3.8f}'.format(Lz).rjust(16) + "    zlo zhi")
+                        '{:3.8f}'.format(Lz).rjust(16) + "     zlo zhi")
 
 outputFile.write("\n")
 outputFile.write("\nMasses")
@@ -85,14 +93,14 @@ outputFile.write("\n#   atom-ID    mol-ID   atom-type    charge    x            
 # wafer layer
 waferParticles = 0
 z = zOrigin
-for ix in range(nPlaneX):
-    x = 0.5 + 1.002*ix
-    for iy in range(nPlaneX):
+for ix in range(nWaferX):
+    x = (0.501 + 1.00001*cos30*ix)
+    for iy in range(nWaferY):
         waferParticles += 1
         atomNumber = (waferParticles - 1)*3 + 1
         # ipc center
-        j = 0 if (ix + iy) % 2 == 0 else 1
-        y = 0.5 + 1.002*iy
+        j = (ix%4 + 2*iy)%4
+        y = 0.501 + ( (.5 + 1.00001*iy) if ix%2==0 else (1.00001*iy) )
         outputFile.write("\n" + str(atomNumber).rjust(10) +
               str(waferParticles).rjust(10) +
               str(1).rjust(10) +
@@ -143,6 +151,8 @@ for iz in range(1, nFluidZ + 1):
                  '{:3.8f}'.format(x).rjust(16) +
                  '{:3.8f}'.format(y).rjust(16) +
                  '{:3.8f}'.format(z).rjust(16) )
+
+            j = 4
             # first patch
             px = x + p[j][0];    px = absolutePBC(px)
             py = y + p[j][1];    py = absolutePBC(py)

@@ -7,13 +7,14 @@ from math import cos, sin, sqrt, pi, floor
 from numpy.random import ranf
 
 helpString = """Creates a LAMMPS starting configuration with a fully formed wafer layer structure.\n
-Sample values for a cubic box:      14 12 6 12.4 12.4 12.0 0.22\n
-Sample values for an elongated box: 14 24 6 12.4 24.8 12.0 0.22\n"""
+Sample values for a cubic box:      14 12 6 6 12.4 12.4 12.0 0.22\n
+Sample values for an elongated box: 14 24 6 6 12.4 24.8 12.0 0.22\n"""
 
 parser = argparse.ArgumentParser(description=helpString)
 parser.add_argument('particlePerSideX', metavar='nPx', type=int, help='number of IPCs in the X side')
 parser.add_argument('particlePerSideY', metavar='nPy', type=int, help='number of IPCs in the Y side')
-parser.add_argument('numberOfLayersZ', metavar='nLz', type=int, help='number of IPC layers in the Z side')
+parser.add_argument('numberOfWaferLayersZ', metavar='nWz', type=int, help='number of wafer layers in the Z side')
+parser.add_argument('numberOfInterLayersZ', metavar='nFz', type=int, help='number of inter layers in the Z side')
 parser.add_argument('boxSideX', metavar='Lx', type=float, help='size of the simulation box side base (x)')
 parser.add_argument('boxSideY', metavar='Ly', type=float, help='size of the simulation box side base (y)')
 parser.add_argument('boxSideZ', metavar='Lz', type=float, help='height of the simulation box side (z)')
@@ -29,10 +30,10 @@ Lz = args.boxSideZ
 ecc = args.ecc
 nWaferX = args.particlePerSideX
 nWaferY = args.particlePerSideY
-nWaferZ = args.numberOfLayersZ
+nWaferZ = args.numberOfWaferLayersZ
 nFluidX = int(nWaferX/2)
 nFluidY = int(nWaferY/1.6)
-nFluidZ = nWaferZ
+nFluidZ = args.numberOfInterLayersZ
 
 totalWaferIPCs = nWaferX * nWaferY * nWaferZ
 totalChocoIPCs = nFluidX * nFluidY * nFluidZ
@@ -200,3 +201,8 @@ for i in range(nIPCs):
                             str(IDpatch1).rjust(10) + str(IDcenter).rjust(10) +
                             str(IDpatch2).rjust(10) )
 outputFile.write("\n")
+
+print("There are {} IPCs, {} in the wafer and {} in the interlayers.".format(nIPCs, waferIPCs, chocoIPCs))
+print("The interlayer to wafer ratio is {}, ideal would be {}.".format(chocoIPCs/waferIPCs, 2/7))
+print("The interlayer to total IPCs ratio is {}, ideal would be {}.".format(chocoIPCs/nIPCs, 2/9))
+print("The density is {}.".format(nIPCs/(Lx*Ly*Lz)))
