@@ -1,0 +1,73 @@
+###########################
+# IPC LAMMPS - epitaxy    #
+###########################
+
+dimension      3
+units          lj
+boundary       p p f
+atom_style     full
+
+# read starting configuration
+read_data      startingstate_epitaxy.txt
+#read_restart  restartingstate.new
+
+# interaction potential
+pair_style     table linear 120000
+bond_style     harmonic
+angle_style    harmonic
+pair_modify    mix geometric tail yes
+
+# force field parameters
+pair_coeff     1 1 ../lammpspot_45n/BB.table BB
+pair_coeff     1 2 ../lammpspot_45n/Bs1.table Bs1
+pair_coeff     2 2 ../lammpspot_45n/s1s1.table s1s1
+bond_coeff     1 9999.9 0.22     # center-patch distance
+angle_coeff    1 9999.9 180.0    # patch-patch angle
+
+group          substrate_IPCs   id <> 1 504 # 168*3
+group          fluid_IPCs     subtract  all substrate_IPCs
+group          substrate_IPCs_centers   id 1:504:3 # 168*3
+group          substrate_IPCs_patches   subtract substrate_IPCs substrate_IPCs_centers
+
+neighbor       0.3 bin
+neigh_modify   every 1 check yes
+
+thermo_style   custom step  temp epair
+log            outputFile.txt
+thermo         25000
+dump           dumpcommand all atom 25000 trajectory.lammpstrj
+dump_modify    dumpcommand     sort id    pbc yes
+
+timestep       0.001
+
+fix    zwalls  fluid_IPCs  wall/reflect zlo EDGE zhi EDGE
+
+# equilibration of the substrate
+velocity       substrate_IPCs_patches create 0.11 ${seed} dist gaussian rot yes
+fix    1       substrate_IPCs_patches nvt temp 0.11 0.04 1.0
+run            100000
+unfix  1
+
+# equilibrate the fluid
+velocity       fluid_IPCs create 0.20 ${seed} dist gaussian rot yes
+fix    1       fluid_IPCs nvt temp 0.20 0.14 1.0
+run            100000
+fix    1       fluid_IPCs nvt temp 0.14 0.13 1.0
+run            100000
+fix    1       fluid_IPCs nvt temp 0.13 0.12 1.0
+run            200000
+
+# evolutio
+fix    1       fluid_IPCs              nvt temp 0.120 0.110 1.0
+fix    2       substrate_IPCs_patches  nvt temp 0.120 0.110 1.0
+run            50000000
+
+write_restart  restartingstate_1.new
+
+# final, to collect
+undump         dumpcommand
+dump           dumpcommand all atom 10000 trajectory_final.lammpstrj
+dump_modify    dumpcommand     sort id    pbc yes
+fix    1       fluid_IPCs              nvt temp 0.115 0.115 1.0
+fix    2       substrate_IPCs_patches  nvt temp 0.115 0.115 1.0
+run            10000000

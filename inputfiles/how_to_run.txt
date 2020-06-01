@@ -1,0 +1,8 @@
+All dirs include an .in file and a startingstate.
+
+1 - Copy them to the directory where you want to run.
+2 - Copy in that directory the potential that you want to use,
+    and fix its name and path in the .in file
+3 - Run LAMMPS:
+    <path>/lmp -in run_*.in -var seed $RANDOM
+    (the seed is used to initialize the velocities, $RANDOM is a bash command)
