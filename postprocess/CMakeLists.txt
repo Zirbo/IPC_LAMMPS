@@ -22,6 +22,8 @@ set(ALL_FILES
     IPCpostprocessOrientationsAnalysis.cpp
     IPCpairCorrelation.hpp
     IPCpairCorrelation.cpp
+    IPCpostprocessEccentricityHistogram.hpp
+    IPCpostprocessEccentricityHistogram.cpp
 )
 
 add_executable(${PROJECT_NAME} ${ALL_FILES})

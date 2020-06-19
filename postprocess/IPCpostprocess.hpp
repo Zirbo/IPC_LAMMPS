@@ -30,6 +30,7 @@ private:
     Triad boxSide;
     Ensemble ipcs;
     VectorOfTriads ipcOrientations;
+    std::vector<double> ipcEccentricities;
     // geometry
     double ipcRadius, patchRadius, patchEccentricity, interactionRange;
 
@@ -41,6 +42,7 @@ private:
     inline void relativePBC(double & x) {  x -= std::round(x);  }
     void computeOrientations();
     void computePerfectOrientations();
+    void printFinalOrientations(std::string const& outFileName);
 };
 
 #endif //__IPCPOSTPROCESS_HEADER_INCLUDED__

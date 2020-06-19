@@ -8,6 +8,7 @@
 #include "IPCpostprocessNeighbourAnalysis.hpp"
 #include "IPCpostprocessOrientationsAnalysis.hpp"
 #include "IPCpairCorrelation.hpp"
+#include "IPCpostprocessEccentricityHistogram.hpp"
 
 IPCpostprocess::IPCpostprocess(std::string const& trajFilename, std::string const& inputFilename, std::string const& potDirName) {
 
@@ -49,20 +50,26 @@ void IPCpostprocess::run() {
     IPCneighboursAnalysis neighbourAnalysis(boxSide, interactionRange);
     IPCorientationsAnalysis orientationsAnalysis;
     IPCisotropicPairCorrelationFunction g_r(50, boxSide, nIPCs);
+    IPCeccentricityHistogram eccentricityHistogram(patchEccentricity);
 
     neighbourAnalysis.accumulate(potential, ipcs);
     orientationsAnalysis.accumulate(ipcOrientations);
     g_r.accumulate(ipcs);
+    eccentricityHistogram.accumulate(ipcEccentricities);
 
     while (trajectoryFile.peek() != EOF) {
         readNewConfiguration();
         neighbourAnalysis.accumulate(potential, ipcs);
         orientationsAnalysis.accumulate(ipcOrientations);
         g_r.accumulate(ipcs);
+        eccentricityHistogram.accumulate(ipcEccentricities);
     }
-    neighbourAnalysis.print("orientationAnalysis.out");
-    orientationsAnalysis.print("orientationAnalysis.out");
-    g_r.print("g_r.out");
+    neighbourAnalysis.print("analysis/neighbourAnalysis.out");
+    orientationsAnalysis.print("analysis/orientationAnalysis.out");
+    g_r.print("analysis/g_r.out");
+    eccentricityHistogram.print("analysis/eccentricityHistogram.out", nIPCs);
+
+    printFinalOrientations("analysis/finalOrientation.xyz");
 }
 
 void IPCpostprocess::readFirstConfiguration() {
@@ -82,6 +89,7 @@ void IPCpostprocess::readFirstConfiguration() {
     trajectoryFile.ignore(200, '\n');
     ipcs.resize(nIPCs);
     ipcOrientations.resize(nIPCs);
+    ipcEccentricities.resize(nIPCs);
 
     readIPCconfiguration();
     computeOrientations();
@@ -103,7 +111,7 @@ bool IPCpostprocess::readNewConfiguration() {
     readIPCconfiguration();
     computeOrientations();
 
-    std::cout << timestep << "\n";
+    std::cout << timestep << std::endl; //"\n";
     return true;
 }
 
@@ -151,15 +159,29 @@ void IPCpostprocess::computePerfectOrientations() {
 void IPCpostprocess::computeOrientations() {
     for (IPC ipc: ipcs) {
         double norm = 0.;
+        double ecc = 0.;
         for (int d: DIMENSIONS) {
             ipcOrientations[ipc.number][d] = ipc.firstPatch.x[d] - ipc.ipcCenter.x[d];
             relativePBC(ipcOrientations[ipc.number][d]);
             norm += std::pow(ipcOrientations[ipc.number][d],2);
+            ecc += std::pow(boxSide[d]*ipcOrientations[ipc.number][d],2);
         }
         norm = std::pow(norm, -0.5);
         for (int d: DIMENSIONS) {
             ipcOrientations[ipc.number][d] *= norm;
         }
+        ecc = std::sqrt(ecc);
+        ipcEccentricities[ipc.number] = ecc;
+    }
+}
 
+void IPCpostprocess::printFinalOrientations(std::string const& outFileName) {
+    std::ofstream outputFile(outFileName);
+    outputFile << ipcOrientations.size() << "\n";
+    for (Triad orientation: ipcOrientations ) {
+        outputFile << "\nA\t"
+                   << orientation[0] << "\t"
+                   << orientation[1] << "\t"
+                   << orientation[2];
     }
 }
