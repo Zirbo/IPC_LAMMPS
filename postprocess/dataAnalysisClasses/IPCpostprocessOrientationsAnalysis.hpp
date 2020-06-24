@@ -4,8 +4,8 @@
 #include <vector>
 //#include <cmath>
 
-#include "IPC.hpp"
-#include "IPCpostprocessPotential.hpp"
+#include "../IPC.hpp"
+#include "../IPCpostprocessPotential.hpp"
 
 class IPCorientationsAnalysis {
 public:

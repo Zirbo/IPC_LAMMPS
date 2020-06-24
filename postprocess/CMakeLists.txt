@@ -16,16 +16,18 @@ set(ALL_FILES
     main.cpp
     IPCpostprocessPotential.hpp
     IPCpostprocessPotential.cpp
-    IPCpostprocessNeighbourAnalysis.hpp
-    IPCpostprocessNeighbourAnalysis.cpp
-    IPCpostprocessOrientationsAnalysis.hpp
-    IPCpostprocessOrientationsAnalysis.cpp
-    IPCpairCorrelation.hpp
-    IPCpairCorrelation.cpp
-    IPCpostprocessEccentricityHistogram.hpp
-    IPCpostprocessEccentricityHistogram.cpp
-    IPCpostprocessMeanSquaredDisplacement.hpp
-    IPCpostprocessMeanSquaredDisplacement.cpp
+    dataAnalysisClasses/IPCpostprocessNeighbourAnalysis.hpp
+    dataAnalysisClasses/IPCpostprocessNeighbourAnalysis.cpp
+    dataAnalysisClasses/IPCpostprocessOrientationsAnalysis.hpp
+    dataAnalysisClasses/IPCpostprocessOrientationsAnalysis.cpp
+    dataAnalysisClasses/IPCpairCorrelation.hpp
+    dataAnalysisClasses/IPCpairCorrelation.cpp
+    dataAnalysisClasses/IPCpostprocessEccentricityHistogram.hpp
+    dataAnalysisClasses/IPCpostprocessEccentricityHistogram.cpp
+    dataAnalysisClasses/IPCpostprocessMeanSquaredDisplacement.hpp
+    dataAnalysisClasses/IPCpostprocessMeanSquaredDisplacement.cpp
+    dataAnalysisClasses/IPCpostprocessAxialityDeviationHistogram.hpp
+    dataAnalysisClasses/IPCpostprocessAxialityDeviationHistogram.cpp
 )
 
 add_executable(${PROJECT_NAME} ${ALL_FILES})

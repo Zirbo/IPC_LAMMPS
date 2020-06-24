@@ -2,7 +2,7 @@
 #include <string>
 #include <cmath>
 
-#include "IPC.hpp"
+#include "../IPC.hpp"
 
 class IPCisotropicPairCorrelationFunction {
 

@@ -7,7 +7,7 @@
 #include <fstream>
 #include <cmath>
 
-#include "IPC.hpp"
+#include "../IPC.hpp"
 
 class IPCmsd {
 public:

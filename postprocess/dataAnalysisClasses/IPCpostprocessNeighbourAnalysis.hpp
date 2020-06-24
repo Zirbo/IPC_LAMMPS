@@ -6,8 +6,8 @@
 #include <list>
 #include <cmath>
 
-#include "IPC.hpp"
-#include "IPCpostprocessPotential.hpp"
+#include "../IPC.hpp"
+#include "../IPCpostprocessPotential.hpp"
 
 class IPCneighboursAnalysis {
 public:
