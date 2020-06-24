@@ -24,6 +24,8 @@ set(ALL_FILES
     IPCpairCorrelation.cpp
     IPCpostprocessEccentricityHistogram.hpp
     IPCpostprocessEccentricityHistogram.cpp
+    IPCpostprocessMeanSquaredDisplacement.hpp
+    IPCpostprocessMeanSquaredDisplacement.cpp
 )
 
 add_executable(${PROJECT_NAME} ${ALL_FILES})

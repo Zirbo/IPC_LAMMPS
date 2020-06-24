@@ -9,6 +9,7 @@
 #include "IPCpostprocessOrientationsAnalysis.hpp"
 #include "IPCpairCorrelation.hpp"
 #include "IPCpostprocessEccentricityHistogram.hpp"
+#include "IPCpostprocessMeanSquaredDisplacement.hpp"
 
 IPCpostprocess::IPCpostprocess(std::string const& trajFilename, std::string const& inputFilename, std::string const& potDirName) {
 
@@ -51,6 +52,7 @@ void IPCpostprocess::run() {
     IPCorientationsAnalysis orientationsAnalysis;
     IPCisotropicPairCorrelationFunction g_r(50, boxSide, nIPCs);
     IPCeccentricityHistogram eccentricityHistogram(patchEccentricity);
+    IPCmsd msd("analysis/msd.out", ipcs);
 
     neighbourAnalysis.accumulate(potential, ipcs);
     orientationsAnalysis.accumulate(ipcOrientations);
@@ -63,6 +65,7 @@ void IPCpostprocess::run() {
         orientationsAnalysis.accumulate(ipcOrientations);
         g_r.accumulate(ipcs);
         eccentricityHistogram.accumulate(ipcEccentricities);
+        msd.accumulateAndPrint(ipcs);
     }
     neighbourAnalysis.print("analysis/neighbourAnalysis.out");
     orientationsAnalysis.print("analysis/orientationAnalysis.out");
