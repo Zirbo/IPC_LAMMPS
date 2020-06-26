@@ -53,7 +53,7 @@ void IPCpostprocess::run() {
     IPCorientationsAnalysis orientationsAnalysis;
     IPCisotropicPairCorrelationFunction g_r(50, boxSide, nIPCs);
     IPCeccentricityHistogram eccentricityHistogram(patchEccentricity);
-    IPCmsd msd("analysis/msd.out", ipcs);
+    IPCmsd msd("analysis/msd.out", ipcs, boxSide);
     IPCAxialityDeviationHistogram axialityHistogram;
 
     neighbourAnalysis.accumulate(potential, ipcs);

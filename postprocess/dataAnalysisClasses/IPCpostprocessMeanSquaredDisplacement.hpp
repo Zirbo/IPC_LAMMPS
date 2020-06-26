@@ -11,7 +11,7 @@
 
 class IPCmsd {
 public:
-    IPCmsd(std::string const& outputFileName, Ensemble const& system);
+    IPCmsd(std::string const& outputFileName, Ensemble const& system, Triad const& pboxSide);
     void accumulateAndPrint(Ensemble const& system);
 
 private:
@@ -21,6 +21,7 @@ private:
     VectorOfTriads ipcCentersPreviousPositions;
     VectorOfTriads displacementOfEachIPCs;
     int timeCounter;
+    Triad boxSide;
 
     void computeMSD(Ensemble const& system);
     void updatePreviousPositions(Ensemble const& system);
