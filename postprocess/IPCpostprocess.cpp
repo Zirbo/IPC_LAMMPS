@@ -169,31 +169,28 @@ void IPCpostprocess::readIPCconfiguration() {
 
 void IPCpostprocess::computeOrientations() {
     for (IPC ipc: ipcs) {
-        double normFirst = 0.;
-        double normSecnd = 0.;
-        double eccFirst = 0.;
-        double eccSecnd = 0.;
+        double eccentricityFirstPatch = 0.;
+        double eccentricitySecndPatch = 0.;
         for (int d: DIMENSIONS) {
             ipcOrientationsFirstPatch[ipc.number][d] = ipc.firstPatch.x[d] - ipc.ipcCenter.x[d];
             relativePBC(ipcOrientationsFirstPatch[ipc.number][d]);
-            normFirst += std::pow(ipcOrientationsFirstPatch[ipc.number][d],2);
-            eccFirst += std::pow(boxSide[d]*ipcOrientationsFirstPatch[ipc.number][d],2);
+            ipcOrientationsFirstPatch[ipc.number][d] *= boxSide[d];
+            eccentricityFirstPatch += std::pow(ipcOrientationsFirstPatch[ipc.number][d],2);
 
             ipcOrientationsSecndPatch[ipc.number][d] = ipc.secndPatch.x[d] - ipc.ipcCenter.x[d];
             relativePBC(ipcOrientationsSecndPatch[ipc.number][d]);
-            normSecnd += std::pow(ipcOrientationsSecndPatch[ipc.number][d],2);
-            eccSecnd += std::pow(boxSide[d]*ipcOrientationsSecndPatch[ipc.number][d],2);
+            ipcOrientationsSecndPatch[ipc.number][d] *= boxSide[d];
+            eccentricitySecndPatch += std::pow(ipcOrientationsSecndPatch[ipc.number][d],2);
         }
-        normFirst = std::pow(normFirst, -0.5);
-        normSecnd = std::pow(normSecnd, -0.5);
+
+        eccentricityFirstPatch = std::sqrt(eccentricityFirstPatch);
+        eccentricitySecndPatch = std::sqrt(eccentricitySecndPatch);
+        ipcEccentricities[ipc.number] = eccentricityFirstPatch;
+        ipcEccentricities[ipcs.size() + ipc.number] = eccentricitySecndPatch;
         for (int d: DIMENSIONS) {
-            ipcOrientationsFirstPatch[ipc.number][d] *= normFirst;
-            ipcOrientationsSecndPatch[ipc.number][d] *= normSecnd;
+            ipcOrientationsFirstPatch[ipc.number][d] /= eccentricityFirstPatch;
+            ipcOrientationsSecndPatch[ipc.number][d] /= eccentricitySecndPatch;
         }
-        eccFirst = std::sqrt(eccFirst);
-        ipcEccentricities[ipc.number] = eccFirst;
-        eccSecnd = std::sqrt(eccSecnd);
-        ipcEccentricities[ipcs.size() + ipc.number] = eccSecnd;
     }
 }
 
