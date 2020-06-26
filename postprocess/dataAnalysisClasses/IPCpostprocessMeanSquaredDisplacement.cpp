@@ -18,17 +18,22 @@ void IPCmsd::accumulateAndPrint(const Ensemble &system) {
 
 void IPCmsd::computeMSD(const Ensemble &system) {
     ++timeCounter;
-    double meanSquaredDisplacement = 0.0;
+    Triad meanSquaredDisplacement_d = {0.0, 0.0, 0.0};
 
     for (IPC ipc: system) {
         for (int d: DIMENSIONS) {
             double delta_xj = ipc.ipcCenter.x[d] - ipcCentersPreviousPositions[ipc.number][d];
             relativePBC(delta_xj);
-            displacementOfEachIPCs[ipc.number][d] += boxSide[d]*delta_xj;
-            meanSquaredDisplacement += std::pow(displacementOfEachIPCs[ipc.number][d],2);
+            displacementOfEachIPCs[ipc.number][d] += delta_xj;
+            meanSquaredDisplacement_d[d] += std::pow(displacementOfEachIPCs[ipc.number][d],2);
         }
     }
+    double meanSquaredDisplacement = 0.0;
+    for (int d: DIMENSIONS) {
+        meanSquaredDisplacement += boxSide[d]*meanSquaredDisplacement_d[d];
+    }
     meanSquaredDisplacement /= (int)system.size();
+
     meanSquaredDisplFile << timeCounter << "\t" << meanSquaredDisplacement << "\n";
 }
 
