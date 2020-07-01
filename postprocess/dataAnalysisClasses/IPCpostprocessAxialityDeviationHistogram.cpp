@@ -12,7 +12,7 @@ IPCAxialityDeviationHistogram::IPCAxialityDeviationHistogram() {
 }
 
 void IPCAxialityDeviationHistogram::accumulate(VectorOfTriads const& firstPatchOrientations, VectorOfTriads const& secndPatchOrientations) {
-    const double scaling = -numberOfBins/(1. + maxSampling);
+    const double scaling = numberOfBins/(1. + maxSampling);
 
     for (int i = 0; i < (int)firstPatchOrientations.size(); ++i) {
         double cosine = 0.;
@@ -20,11 +20,9 @@ void IPCAxialityDeviationHistogram::accumulate(VectorOfTriads const& firstPatchO
             cosine += firstPatchOrientations[i][d]*secndPatchOrientations[i][d];
         }
 
-        int cosint = 0;
-        if (cosine > maxSampling)
+        int cosint = int( (1.0 + cosine)*scaling );
+        if (cosint > numberOfBins)
             cosint = numberOfBins;
-        else
-            cosint = int( (cosine - maxSampling)*scaling );
         axialityDeviationHistogram[cosint] += 1;
     }
     ++totalSamples;
@@ -32,12 +30,12 @@ void IPCAxialityDeviationHistogram::accumulate(VectorOfTriads const& firstPatchO
 
 void IPCAxialityDeviationHistogram::print(const std::string &outputFileName, int nIPCs) {
     const double norm = 1./(totalSamples*nIPCs);
-    const double inorm = -(1. + maxSampling)/numberOfBins;
+    const double inorm = (1. + maxSampling)/numberOfBins;
     std::ofstream outputFile(outputFileName);
     const double degrees = 180./M_PI;
 
-    for(int i = 0; i < numberOfBins; ++i) {
-        double place = (inorm*(i+1)) + maxSampling;
+    for(int i = 0; i <= numberOfBins; ++i) {
+        double place = inorm*i - 1.0;
         outputFile << place << "\t" << std::acos(place)*degrees << "\t" << norm*axialityDeviationHistogram[i] << "\n";
     }
 
