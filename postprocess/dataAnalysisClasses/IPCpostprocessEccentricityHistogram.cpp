@@ -8,6 +8,7 @@ IPCeccentricityHistogram::IPCeccentricityHistogram(double p_fixedEccentricity) {
     eccentricityHistogram.resize(2*semiamplitude + 1);
     fixedEccentricity = p_fixedEccentricity;
     inverseSemiamplitude = semiamplitude/(fixedEccentricity*percentage);
+    totalSamples = 0;
 }
 
 void IPCeccentricityHistogram::accumulate(std::vector<double> const& eccentricities) {
