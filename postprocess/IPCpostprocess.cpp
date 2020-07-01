@@ -76,7 +76,7 @@ void IPCpostprocess::run() {
     neighbourAnalysis.print("analysis/neighbourAnalysis.out");
     orientationsAnalysis.print("analysis/orientationAnalysis.out");
     g_r.print("analysis/g_r.out");
-    eccentricityHistogram.print("analysis/eccentricityHistogram.out", nIPCs);
+    eccentricityHistogram.print("analysis/eccentricityHistogram.out", ipcEccentricities.size());
     axialityHistogram.print("analysis/axialityHistogram.out", nIPCs);
 
     printFinalOrientations("analysis/finalOrientation.xyz");
