@@ -7,7 +7,7 @@ anybody interested can start simulating IPCs in LAMMPS in few minutes :)
 
 For any help, feel free to contact us!
 
-LAST UPDATED: 1 June 2020
+LAST UPDATED: 3 July 2020
 
 We have 4 directories.
 
@@ -20,18 +20,29 @@ We have 4 directories.
    3 - Run LAMMPS:
        $ mpirun -np xy <path>/lmp -in run_*.in -var seed $RANDOM
      (the seed is used to initialize the velocities, $RANDOM is a bash command)
-  Your LAMMPS distribution needs to be compiled with the MOLECULE package.
+  Your LAMMPS distribution needs to be compiled with the MOLECULE package,
+  and the RIGID package if you use rigid.
   There is also a sample tk script that you can load in VMD (Visual Molecular
   Dynamics) to visualize your trajectory:
   $ vmd -e vmdscript.tk trajectoryfilename.lammpstrj
 
 
-- printpotential: contains a C++ program that can be used to generate the
-  tabulated potential that LAMMPS require. Build the program with
-  $ g++ printPotential.cpp -o executable_name
-  adapt the inputfile to your choice of parameters, then run with
-  ./executable_name inputfile.txt output_directory
-  (change executable_name and output_directory to your liking)
+- printpotential:
+  contains programs that compute the potentials in LAMMPS format.
+  Two scripts are given:
+  -1- mapEpsilonsToCoefficients.sh
+     requires as input (modify the file to supply the inputs!)
+     the geometric parameters and the epsilons from the mapping (as the defined
+     in the original Bianchi-Kahl-Likos paper) and prints out the potential
+     in a lammpspot_name directory and a recap file inputfile_name.txt;
+  -2- mapContactValuesToCoefficients.sh
+     requires as input (modify the file to supply the inputs!)
+     the geometric parameters and the desired contact values of the potential
+     in the three EE, EP and PP orientations, and prints out the potential
+     in a lammpspot_name directory, together with a file MC_inputfile_name.txt
+     that recaps what you inputted and another file inputfile_name.txt (that
+     follows the normalization of mapEpsilonsToCoefficients.sh)
+  THE SCRIPTS ASSUME g++ AND python3 TO BE INSTALLED!
 
 
 - startingstate_creators: contains Python scripts that can be used to generate
