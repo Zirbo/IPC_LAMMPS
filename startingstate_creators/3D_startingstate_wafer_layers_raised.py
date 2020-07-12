@@ -16,7 +16,8 @@ parser.add_argument('particlePerSideY', metavar='nPy', type=int, help='number of
 parser.add_argument('spacing', metavar='s', type=float, help='spacing of the fluid in the x-y plane')
 parser.add_argument('zOrigin', metavar='z0', type=float, help='height of the plane')
 parser.add_argument('spacingZ', metavar='sz', type=float, help='spacing of the fluid in the z direction')
-parser.add_argument('boxSide', metavar='L', type=float, help='size of the simulation box side base (x-y)')
+parser.add_argument('boxSideX', metavar='Lx', type=float, help='size of the simulation box side base (x)')
+parser.add_argument('boxSideY', metavar='Ly', type=float, help='size of the simulation box side base (y)')
 parser.add_argument('boxSideZ', metavar='Lz', type=float, help='height of the simulation box side (z)')
 parser.add_argument('ecc', metavar='e', type=float, help='eccentricity of the IPCs')
 args = parser.parse_args()
@@ -24,7 +25,8 @@ print(args)
 
 outputFile = open('IPC_startingstate_manner.txt','w')
 
-L = args.boxSide
+Lx = args.boxSideX
+Ly = args.boxSideY
 Lz = args.boxSideZ
 zOrigin = args.zOrigin
 if zOrigin < 0.25:
@@ -34,16 +36,20 @@ spacingZ = args.spacingZ
 ecc = args.ecc
 nWaferX = args.particlePerSideX
 nWaferY = args.particlePerSideY
-nFluidX = int(L/spacing)
-nFluidY = int(L/spacing)
+nFluidX = int(Lx/spacing)
+nFluidY = int(Ly/spacing)
 nFluidZ = int((Lz-zOrigin)/spacingZ)
 
-print(nWaferX, nWaferY, spacing, L, ecc, nFluidX, nFluidY, nFluidZ)
+print(nWaferX, nWaferY, spacing, Lx, Ly, Lz, ecc, nFluidX, nFluidY, nFluidZ)
+print(   (nWaferX*nWaferY + nFluidX*nFluidY*nFluidZ) / ( Lx* Ly*Lz ) )
 
 nIPCs = nWaferX*nWaferY + nFluidX*nFluidY*nFluidZ
 
-def absolutePBC(x):
-    return x - L*floor(x/L)
+def absolutePBCx(x):
+    return x - Lx*floor(x/Lx)
+
+def absolutePBCy(y):
+    return y - Ly*floor(y/Ly)
 
 def absolutePBCz(z):
     return z - Lz*floor(z/Lz)
@@ -73,9 +79,9 @@ outputFile.write("\n" + str(1).rjust(16) + " angle types")
 outputFile.write("\n")
 
 outputFile.write("\n" + '{:3.8f}'.format(0.0).rjust(16) +
-                        '{:3.8f}'.format(L).rjust(16) + "     xlo xhi")
+                        '{:3.8f}'.format(Lx).rjust(16) + "     xlo xhi")
 outputFile.write("\n" + '{:3.8f}'.format(0.0).rjust(16) +
-                        '{:3.8f}'.format(L).rjust(16) + "     ylo yhi")
+                        '{:3.8f}'.format(Ly).rjust(16) + "     ylo yhi")
 outputFile.write("\n" + '{:3.8f}'.format(0.0).rjust(16) +
                         '{:3.8f}'.format(Lz).rjust(16) + "     zlo zhi")
 
@@ -108,8 +114,8 @@ for ix in range(nWaferX):
              '{:3.8f}'.format(y).rjust(16) +
              '{:3.8f}'.format(z).rjust(16) )
         # first patch
-        px = x + p[j][0];    px = absolutePBC(px)
-        py = y + p[j][1];    py = absolutePBC(py)
+        px = x + p[j][0];    px = absolutePBCy(px)
+        py = y + p[j][1];    py = absolutePBCx(py)
         pz = z + p[j][2];    pz = absolutePBCz(pz)
         atomNumber += 1
         outputFile.write("\n" + str(atomNumber).rjust(10) +
@@ -120,8 +126,8 @@ for ix in range(nWaferX):
              '{:3.8f}'.format(py).rjust(16) +
              '{:3.8f}'.format(pz).rjust(16) )
         # second patch
-        px = x - p[j][0];    px = absolutePBC(px)
-        py = y - p[j][1];    py = absolutePBC(py)
+        px = x - p[j][0];    px = absolutePBCx(px)
+        py = y - p[j][1];    py = absolutePBCy(py)
         pz = z - p[j][2];    pz = absolutePBCz(pz)
         atomNumber += 1
         outputFile.write("\n" + str(atomNumber).rjust(10) +
@@ -153,8 +159,8 @@ for iz in range(1, nFluidZ + 1):
 
             j = 2
             # first patch
-            px = x + p[j][0];    px = absolutePBC(px)
-            py = y + p[j][1];    py = absolutePBC(py)
+            px = x + p[j][0];    px = absolutePBCx(px)
+            py = y + p[j][1];    py = absolutePBCy(py)
             pz = z + p[j][2];    pz = absolutePBCz(pz)
             atomNumber += 1
             outputFile.write("\n" + str(atomNumber).rjust(10) +
@@ -165,8 +171,8 @@ for iz in range(1, nFluidZ + 1):
                  '{:3.8f}'.format(py).rjust(16) +
                  '{:3.8f}'.format(pz).rjust(16) )
             # second patch
-            px = x - p[j][0];    px = absolutePBC(px)
-            py = y - p[j][1];    py = absolutePBC(py)
+            px = x - p[j][0];    px = absolutePBCx(px)
+            py = y - p[j][1];    py = absolutePBCy(py)
             pz = z - p[j][2];    pz = absolutePBCz(pz)
             atomNumber += 1
             outputFile.write("\n" + str(atomNumber).rjust(10) +
