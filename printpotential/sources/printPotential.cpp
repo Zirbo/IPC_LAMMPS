@@ -5,32 +5,7 @@
 #include <cmath>
 #include <iomanip>
 
-void error(std::string const & errorMessage) {
-    std::cerr << errorMessage;
-    exit(1);
-}
-
-class PotentialForLammps {
-public:
-    PotentialForLammps(std::string const& inputFileName);
-    void computePotential();
-    void printPotentialsToFile(std::string const& outputDirName);
-
-private:
-    double e_BB, e_Bs1, e_Bs2, e_s1s1, e_s1s2, e_s2s2, e_min;
-    double firstPatchEccentricity, firstPatchRadius;
-    double secndPatchEccentricity, secndPatchRadius;
-    double ipcRadius, interactionRange;
-    double fakeHSdiameter, fakeHScoefficient, fakeHSexponent;
-
-    double samplingStep, cutoffValue;
-
-    std::vector<double> uHS, uBB, uBs1, uBs2, us1s2, us1s1, us2s2;
-    std::vector<double> fHS, fBB, fBs1, fBs2, fs1s2, fs1s1, fs2s2;
-
-    double computeOmega(double Ra, double Rb, double rab);
-    double computeOmegaRadialDerivative(double Ra, double Rb, double rab);
-};
+#include "printPotential.hpp"
 
 PotentialForLammps::PotentialForLammps(const std::string &inputFileName) {
     // read input.in file
@@ -80,7 +55,7 @@ double PotentialForLammps::computeOmegaRadialDerivative(double Ra, double Rb, do
     }
 }
 
-void PotentialForLammps::computePotential()
+void PotentialForLammps::computeSiteSitePotentials()
 {
     const size_t potentialSteps = size_t( interactionRange/samplingStep ) + 2;
 
@@ -127,7 +102,7 @@ void PotentialForLammps::computePotential()
     }
 }
 
-void PotentialForLammps::printPotentialsToFile(const std::string &outputDirName) {
+void PotentialForLammps::printLAMMPSpotentialsToFile(const std::string &outputDirName) {
     // create output directory
     const std::string makedir = "mkdir -p " + outputDirName;
     if(system(makedir.c_str()) != 0)
@@ -136,16 +111,16 @@ void PotentialForLammps::printPotentialsToFile(const std::string &outputDirName)
     // prepare strings for defining file names
     const std::string extension(".table");
     std::string interactionType [6];
-    interactionType[0] = "/BB";      interactionType[1] = "/Bs1";     interactionType[2] = "/Bs2";
-    interactionType[3] = "/s1s2";    interactionType[4] = "/s1s1";    interactionType[5] = "/s2s2";
+    interactionType[0] = "BB";      interactionType[1] = "Bs1";     interactionType[2] = "Bs2";
+    interactionType[3] = "s1s2";    interactionType[4] = "s1s1";    interactionType[5] = "s2s2";
 
     const size_t potentialSteps = uHS.size();
 
     for (int type = 0; type < 6; ++type) {
         // create the output file
-        std::string fileName = outputDirName + interactionType[type] + extension;
+        std::string fileName = outputDirName + "/" + interactionType[type] + extension;
         std::ofstream potentialOutputFile(fileName);
-        potentialOutputFile << "# potentials for lammps\n\n" << interactionType[type] << "\nN " << potentialSteps << "\n\n";
+        potentialOutputFile << "# potentials for lammps\n\n" << interactionType[type] << "\nN " << potentialSteps-1 << "\n\n"; // -1 because we don't print r=0
         potentialOutputFile << std::scientific << std::setprecision(6);
 
         for ( size_t i = 1; i < potentialSteps; ++i) {
@@ -179,18 +154,4 @@ void PotentialForLammps::printPotentialsToFile(const std::string &outputDirName)
         potentialOutputFile.close();
     }
 
-}
-
-
-
-int main( int argc, char *argv[] ) {
-    // parse arguments
-    if (argc != 3)
-        error("Wrong number of arguments.\n");
-    const std::string inputFileName(argv[1]);
-    const std::string outputDirName(argv[2]);
-
-    PotentialForLammps potential(inputFileName);
-    potential.computePotential();
-    potential.printPotentialsToFile(outputDirName);
 }

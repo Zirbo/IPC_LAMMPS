@@ -38,7 +38,7 @@ nWaferX = args.particlePerSideX
 nWaferY = args.particlePerSideY
 nFluidX = int(Lx/spacing)
 nFluidY = int(Ly/spacing)
-nFluidZ = int((Lz-zOrigin)/spacingZ)
+nFluidZ = int((Lz-zOrigin)/spacingZ) - 1
 
 print(nWaferX, nWaferY, spacing, Lx, Ly, Lz, ecc, nFluidX, nFluidY, nFluidZ)
 print(   (nWaferX*nWaferY + nFluidX*nFluidY*nFluidZ) / ( Lx* Ly*Lz ) )
@@ -114,8 +114,8 @@ for ix in range(nWaferX):
              '{:3.8f}'.format(y).rjust(16) +
              '{:3.8f}'.format(z).rjust(16) )
         # first patch
-        px = x + p[j][0];    px = absolutePBCy(px)
-        py = y + p[j][1];    py = absolutePBCx(py)
+        px = x + p[j][0];    px = absolutePBCx(px)
+        py = y + p[j][1];    py = absolutePBCy(py)
         pz = z + p[j][2];    pz = absolutePBCz(pz)
         atomNumber += 1
         outputFile.write("\n" + str(atomNumber).rjust(10) +

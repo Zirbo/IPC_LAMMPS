@@ -19,7 +19,7 @@ vPP=4.0
 pushd sources
   python3 mapContactValuesToCoefficients.py $model_name $delta $ecc $vEE $vEP $vPP
   if [ ! -f compute.out ]; then
-    g++ printPotential.cpp -o compute.out
+    g++ printPotential.cpp main.cpp -o compute.out
   fi
   ./compute.out inputfile_${model_name}.txt ../lammpspot_${model_name}
   mv inputfile_${model_name}.txt ..
