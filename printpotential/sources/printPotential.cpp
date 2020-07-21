@@ -155,3 +155,55 @@ void PotentialForLammps::printLAMMPSpotentialsToFile(const std::string &outputDi
     }
 
 }
+
+
+
+void PotentialForLammps::printPotentialsToFileForVisualization(std::string const& outputDirName) {
+    // create output directory
+    const std::string makedir = "mkdir -p " + outputDirName + "_EE_EP_PP_visualization";
+    if(system(makedir.c_str()) != 0)
+        error("Problem while creating the directory.\n");
+
+    // prepare strings for defining file names
+    const std::string extension(".table");
+    std::string interactionType [6];
+    interactionType[0] = "BB";      interactionType[1] = "Bs1";     interactionType[2] = "Bs2";
+    interactionType[3] = "s1s2";    interactionType[4] = "s1s1";    interactionType[5] = "s2s2";
+
+    const size_t potentialSteps = size_t( interactionRange/samplingStep ) + 2;
+    const size_t contact = size_t( 1.0/samplingStep );
+    const size_t firstPatchEccentricitySteps = size_t(firstPatchEccentricity/samplingStep);
+    const size_t secndPatchEccentricitySteps = size_t(secndPatchEccentricity/samplingStep);
+
+    for (int type = 0; type < 6; ++type) {
+        // create the output file
+        std::string fileName = outputDirName + "_EE_EP_PP_visualization/" + interactionType[type] + extension;
+        std::ofstream potentialOutputFile(fileName);
+        potentialOutputFile << std::scientific << std::setprecision(6);
+
+        for ( size_t i = contact; i < potentialSteps; ++i) {
+            const double r = i*samplingStep;
+            potentialOutputFile << r << "\t";
+
+            // compute force and potential depending on type and cutoff
+            double printPotential;
+            if( type == 0) {
+                printPotential = uHS[i] + uBB[i];
+            } else if ( type == 1) {
+                printPotential = uHS[i] + uBB[i] + uBs1[i-firstPatchEccentricitySteps];
+            } else if ( type == 2) {
+                printPotential = uHS[i] + uBB[i] + uBs2[i-secndPatchEccentricitySteps];
+            } else if ( type == 3) {
+                printPotential = uHS[i] + uBB[i] + uBs1[i-firstPatchEccentricitySteps] + uBs2[i-secndPatchEccentricitySteps] + us1s2[i-firstPatchEccentricitySteps-secndPatchEccentricitySteps];
+            } else if ( type == 4) {
+                printPotential = uHS[i] + uBB[i] + uBs1[i-firstPatchEccentricitySteps] + uBs2[i-secndPatchEccentricitySteps] + us1s1[i-firstPatchEccentricitySteps-firstPatchEccentricitySteps];
+            } else if ( type == 5) {
+                printPotential = uHS[i] + uBB[i] + uBs1[i-firstPatchEccentricitySteps] + uBs2[i-secndPatchEccentricitySteps] + us2s2[i-secndPatchEccentricitySteps-secndPatchEccentricitySteps];
+            }
+            // finally, you can print
+            potentialOutputFile << printPotential << "\n";
+        }
+        potentialOutputFile.close();
+    }
+
+}

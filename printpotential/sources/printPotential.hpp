@@ -10,6 +10,7 @@ public:
     PotentialForLammps(std::string const& inputFileName);
     void computeSiteSitePotentials();
     void printLAMMPSpotentialsToFile(std::string const& outputDirName);
+    void printPotentialsToFileForVisualization(std::string const& outputDirName);
 
     static void error(std::string const & errorMessage) {
     std::cerr << errorMessage;
@@ -31,4 +32,5 @@ private:
 
     double computeOmega(double Ra, double Rb, double rab);
     double computeOmegaRadialDerivative(double Ra, double Rb, double rab);
+    void printPotentialsToFileForVisualizationSingleOrientation(const int potentialPrintingStep);
 };
