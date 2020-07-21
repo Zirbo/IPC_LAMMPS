@@ -32,5 +32,4 @@ private:
 
     double computeOmega(double Ra, double Rb, double rab);
     double computeOmegaRadialDerivative(double Ra, double Rb, double rab);
-    void printPotentialsToFileForVisualizationSingleOrientation(const int potentialPrintingStep);
 };

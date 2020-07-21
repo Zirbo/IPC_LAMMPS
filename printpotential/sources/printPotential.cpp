@@ -165,15 +165,10 @@ void PotentialForLammps::printPotentialsToFileForVisualization(std::string const
         error("Problem while creating the directory.\n");
 
     // prepare strings for defining file names
-    const std::string extension(".table");
+    const std::string extension(".dat");
     std::string interactionType [6];
-    interactionType[0] = "BB";      interactionType[1] = "Bs1";     interactionType[2] = "Bs2";
-    interactionType[3] = "s1s2";    interactionType[4] = "s1s1";    interactionType[5] = "s2s2";
-
-    const size_t potentialSteps = size_t( interactionRange/samplingStep ) + 2;
-    const size_t contact = size_t( 1.0/samplingStep );
-    const size_t firstPatchEccentricitySteps = size_t(firstPatchEccentricity/samplingStep);
-    const size_t secndPatchEccentricitySteps = size_t(secndPatchEccentricity/samplingStep);
+    interactionType[0] = "EE";      interactionType[1] = "Ep1";     interactionType[2] = "Ep2";
+    interactionType[3] = "p1p2";    interactionType[4] = "p1p1";    interactionType[5] = "p2Pp";
 
     for (int type = 0; type < 6; ++type) {
         // create the output file
@@ -181,24 +176,29 @@ void PotentialForLammps::printPotentialsToFileForVisualization(std::string const
         std::ofstream potentialOutputFile(fileName);
         potentialOutputFile << std::scientific << std::setprecision(6);
 
-        for ( size_t i = contact; i < potentialSteps; ++i) {
-            const double r = i*samplingStep;
+        for ( double r = 1.0; r < interactionRange; r += samplingStep) {
             potentialOutputFile << r << "\t";
 
+            size_t iBB = size_t(r/samplingStep);
+            size_t iBs1 = size_t(  (r - firstPatchEccentricity)/samplingStep  );
+            size_t iBs2 = size_t(  (r - secndPatchEccentricity)/samplingStep  );
             // compute force and potential depending on type and cutoff
             double printPotential;
             if( type == 0) {
-                printPotential = uHS[i] + uBB[i];
+                printPotential = uHS[iBB] + uBB[iBB];
             } else if ( type == 1) {
-                printPotential = uHS[i] + uBB[i] + uBs1[i-firstPatchEccentricitySteps];
+                printPotential = uHS[iBB] + uBB[iBB] + uBs1[iBs1];
             } else if ( type == 2) {
-                printPotential = uHS[i] + uBB[i] + uBs2[i-secndPatchEccentricitySteps];
+                printPotential = uHS[iBB] + uBB[iBB] + uBs2[iBs2];
             } else if ( type == 3) {
-                printPotential = uHS[i] + uBB[i] + uBs1[i-firstPatchEccentricitySteps] + uBs2[i-secndPatchEccentricitySteps] + us1s2[i-firstPatchEccentricitySteps-secndPatchEccentricitySteps];
+                size_t is1s2 = size_t(  (r - firstPatchEccentricity - secndPatchEccentricity)/samplingStep  );
+                printPotential = uHS[iBB] + uBB[iBB] + uBs1[iBs1] + uBs2[iBs2] + us1s2[is1s2];
             } else if ( type == 4) {
-                printPotential = uHS[i] + uBB[i] + uBs1[i-firstPatchEccentricitySteps] + uBs2[i-secndPatchEccentricitySteps] + us1s1[i-firstPatchEccentricitySteps-firstPatchEccentricitySteps];
+                size_t is1s1 = size_t(  (r - 2*firstPatchEccentricity)/samplingStep  );
+                printPotential = uHS[iBB] + uBB[iBB] + uBs1[iBs1] + uBs2[iBs2] + us1s1[is1s1];
             } else if ( type == 5) {
-                printPotential = uHS[i] + uBB[i] + uBs1[i-firstPatchEccentricitySteps] + uBs2[i-secndPatchEccentricitySteps] + us2s2[i-secndPatchEccentricitySteps-secndPatchEccentricitySteps];
+                size_t is2s2 = size_t(  (r - 2*secndPatchEccentricity)/samplingStep  );
+                printPotential = uHS[iBB] + uBB[iBB] + uBs1[iBs1] + uBs2[iBs2] + us2s2[is2s2];
             }
             // finally, you can print
             potentialOutputFile << printPotential << "\n";
