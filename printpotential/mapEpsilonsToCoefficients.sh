@@ -21,7 +21,7 @@ emin=0.142495
 pushd sources
   python3 mapEpsilonsToCoefficients.py $model_name $delta $ecc $epsEE $epsEP $epsPP $emin
   if [ ! -f compute.out ]; then
-    g++ printPotential.cpp -o compute.out
+    g++ printPotential.cpp main.cpp -o compute.out
   fi
   ./compute.out inputfile_${model_name}.txt ../lammpspot_${model_name}
   mv inputfile_${model_name}.txt ..
