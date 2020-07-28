@@ -2,9 +2,9 @@
 #include <fstream>
 #include <iomanip>
 
-#include "IPCpostprocessOrientationsAnalysis.hpp"
+#include "IPCpostprocessOrientationsAnalysis2D.hpp"
 
-void IPCorientationsAnalysis::accumulate(VectorOfTriads const& ipcOrientations) {
+void IPCorientationsAnalysis2D::accumulate(VectorOfTriads const& ipcOrientations) {
     // polar -> angle with the z-axis; azimuth -> angle with the x-axis
     // accumulute in a histogram the polar and azimuth angles of each IPC
     const double binSize = M_PI/orientationHistogramSize;
@@ -30,7 +30,7 @@ void IPCorientationsAnalysis::accumulate(VectorOfTriads const& ipcOrientations) 
     ++totalSamples;
 }
 
-void IPCorientationsAnalysis::print(std::string const& outputFileName) {
+void IPCorientationsAnalysis2D::print(std::string const& outputFileName) {
     std::ofstream outputFile(outputFileName);
     outputFile << std::scientific << std::setprecision(6);
 

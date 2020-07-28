@@ -6,11 +6,12 @@
 
 #include "IPCpostprocess.hpp"
 #include "dataAnalysisClasses/IPCpostprocessNeighbourAnalysis.hpp"
-#include "dataAnalysisClasses/IPCpostprocessOrientationsAnalysis.hpp"
+#include "dataAnalysisClasses/IPCpostprocessOrientationsAnalysis2D.hpp"
 #include "dataAnalysisClasses/IPCpairCorrelation.hpp"
 #include "dataAnalysisClasses/IPCpostprocessEccentricityHistogram.hpp"
 #include "dataAnalysisClasses/IPCpostprocessMeanSquaredDisplacement.hpp"
 #include "dataAnalysisClasses/IPCpostprocessAxialityDeviationHistogram.hpp"
+#include "dataAnalysisClasses/IPCpostprocessOrientationsAnalysis3D.hpp"
 
 IPCpostprocess::IPCpostprocess(std::string const& trajFilename, std::string const& inputFilename, std::string const& potDirName) {
 
@@ -50,11 +51,12 @@ void IPCpostprocess::run() {
     readFirstConfiguration();
 
     IPCneighboursAnalysis neighbourAnalysis(boxSide, interactionRange);
-    IPCorientationsAnalysis orientationsAnalysis;
+    IPCorientationsAnalysis2D orientationsAnalysis;
     IPCisotropicPairCorrelationFunction g_r(50, boxSide, nIPCs);
     IPCeccentricityHistogram eccentricityHistogram(patchEccentricity);
     IPCmsd msd("analysis/msd.out", ipcs, boxSide);
     IPCAxialityDeviationHistogram axialityHistogram;
+    IPCorientationsAnalysis3D orientationsAnalysis3D(10);
 
     neighbourAnalysis.accumulate(potential, ipcs);
     orientationsAnalysis.accumulate(ipcOrientationsFirstPatch);
@@ -62,9 +64,11 @@ void IPCpostprocess::run() {
     g_r.accumulate(ipcs);
     eccentricityHistogram.accumulate(ipcEccentricities);
     axialityHistogram.accumulate(ipcOrientationsFirstPatch, ipcOrientationsSecndPatch);
+    orientationsAnalysis3D.accumulate(ipcOrientationsFirstPatch);
 
-    while (trajectoryFile.peek() != EOF) {
-        readNewConfiguration();
+   // while (trajectoryFile.peek() != EOF) {
+   //     readNewConfiguration();
+    while (readNewConfiguration()) {
         neighbourAnalysis.accumulate(potential, ipcs);
         orientationsAnalysis.accumulate(ipcOrientationsFirstPatch);
         orientationsAnalysis.accumulate(ipcOrientationsSecndPatch);
@@ -72,12 +76,14 @@ void IPCpostprocess::run() {
         eccentricityHistogram.accumulate(ipcEccentricities);
         msd.accumulateAndPrint(ipcs);
         axialityHistogram.accumulate(ipcOrientationsFirstPatch, ipcOrientationsSecndPatch);
+        orientationsAnalysis3D.accumulate(ipcOrientationsFirstPatch);
     }
     neighbourAnalysis.print("analysis/neighbourAnalysis.out");
     orientationsAnalysis.print("analysis/orientationAnalysis.out");
     g_r.print("analysis/g_r.out");
     eccentricityHistogram.print("analysis/eccentricityHistogram.out", ipcEccentricities.size());
     axialityHistogram.print("analysis/axialityHistogram.out", nIPCs);
+    orientationsAnalysis3D.print("analysis/orientationAnalysis3D.out");
 
     printFinalOrientations("analysis/finalOrientation.xyz");
 }

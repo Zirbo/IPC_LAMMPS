@@ -7,9 +7,9 @@
 #include "../IPC.hpp"
 #include "../IPCpostprocessPotential.hpp"
 
-class IPCorientationsAnalysis {
+class IPCorientationsAnalysis2D {
 public:
-    IPCorientationsAnalysis()
+    IPCorientationsAnalysis2D()
         : orientationHistogramSize(40) {
         orientationsHistogram.resize(orientationHistogramSize, std::vector<double>(2*orientationHistogramSize, 0.));
     }

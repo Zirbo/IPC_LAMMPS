@@ -1,4 +1,5 @@
 #include "IPCpostprocessMeanSquaredDisplacement.hpp"
+#include <iostream>
 
 IPCmsd::IPCmsd(std::string const& outputFileName, Ensemble const& system, Triad const& pboxSide) {
     meanSquaredDisplFile.open(outputFileName);
@@ -18,13 +19,14 @@ void IPCmsd::accumulateAndPrint(const Ensemble &system) {
 
 void IPCmsd::computeMSD(const Ensemble &system) {
     ++timeCounter;
+    std::cout << timeCounter << std::endl;
     Triad meanSquaredDisplacement_d = {0.0, 0.0, 0.0};
 
     for (IPC ipc: system) {
         for (int d: DIMENSIONS) {
-            double delta_xj = ipc.ipcCenter.x[d] - ipcCentersPreviousPositions[ipc.number][d];
-            relativePBC(delta_xj);
-            displacementOfEachIPCs[ipc.number][d] += delta_xj;
+            double delta_xd = ipc.ipcCenter.x[d] - ipcCentersPreviousPositions[ipc.number][d];
+            relativePBC(delta_xd);
+            displacementOfEachIPCs[ipc.number][d] += delta_xd;
             meanSquaredDisplacement_d[d] += std::pow(displacementOfEachIPCs[ipc.number][d],2);
         }
     }
@@ -34,7 +36,7 @@ void IPCmsd::computeMSD(const Ensemble &system) {
     }
     meanSquaredDisplacement /= (int)system.size();
 
-    meanSquaredDisplFile << timeCounter << "\t" << meanSquaredDisplacement << "\n";
+    meanSquaredDisplFile << timeCounter << "\t" << meanSquaredDisplacement << std::endl;
 }
 
 void IPCmsd::updatePreviousPositions(const Ensemble &system) {

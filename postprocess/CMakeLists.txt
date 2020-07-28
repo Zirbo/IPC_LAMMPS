@@ -18,8 +18,10 @@ set(ALL_FILES
     IPCpostprocessPotential.cpp
     dataAnalysisClasses/IPCpostprocessNeighbourAnalysis.hpp
     dataAnalysisClasses/IPCpostprocessNeighbourAnalysis.cpp
-    dataAnalysisClasses/IPCpostprocessOrientationsAnalysis.hpp
-    dataAnalysisClasses/IPCpostprocessOrientationsAnalysis.cpp
+    dataAnalysisClasses/IPCpostprocessOrientationsAnalysis2D.hpp
+    dataAnalysisClasses/IPCpostprocessOrientationsAnalysis2D.cpp
+    dataAnalysisClasses/IPCpostprocessOrientationsAnalysis3D.hpp
+    dataAnalysisClasses/IPCpostprocessOrientationsAnalysis3D.cpp
     dataAnalysisClasses/IPCpairCorrelation.hpp
     dataAnalysisClasses/IPCpairCorrelation.cpp
     dataAnalysisClasses/IPCpostprocessEccentricityHistogram.hpp
