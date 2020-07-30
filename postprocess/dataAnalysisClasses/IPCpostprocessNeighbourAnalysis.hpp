@@ -15,7 +15,7 @@ public:
         : boxSide{pBoxSides},
           interactionRange(pInteractionRange), totalSamples(0) {}
     void accumulate(IPCpotential const& potential, const Ensemble &ipcs);
-    void print(std::string const& outputFileName);
+    void print(std::string const& outputFileName, const int nIPCs);
 
 private:
     IPCneighboursAnalysis();

@@ -14,7 +14,7 @@ public:
         orientationsHistogram.resize(orientationHistogramSize, std::vector<double>(2*orientationHistogramSize, 0.));
     }
     void accumulate(VectorOfTriads const& ipcOrientations);
-    void print(std::string const& outputFileName);
+    void print(std::string const& outputFileName, const int nIPCs);
 
 private:
     std::vector<std::vector<double>> orientationsHistogram;

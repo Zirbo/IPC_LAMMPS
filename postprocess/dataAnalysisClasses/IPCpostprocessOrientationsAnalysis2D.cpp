@@ -30,11 +30,11 @@ void IPCorientationsAnalysis2D::accumulate(VectorOfTriads const& ipcOrientations
     ++totalSamples;
 }
 
-void IPCorientationsAnalysis2D::print(std::string const& outputFileName) {
+void IPCorientationsAnalysis2D::print(std::string const& outputFileName, const int nIPCs) {
     std::ofstream outputFile(outputFileName);
     outputFile << std::scientific << std::setprecision(6);
 
-    double norm = 1./totalSamples;
+    double norm = 1./(totalSamples*nIPCs);
     const double binSize = M_PI/orientationHistogramSize;
 
     for (int a = 0; a < 2*orientationHistogramSize; ++a) {

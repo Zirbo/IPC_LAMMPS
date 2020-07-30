@@ -113,8 +113,8 @@ void IPCneighboursAnalysis::computeHistogramOfBondedNeighbours(std::vector<std::
     totalSamples++;
 }
 
-void IPCneighboursAnalysis::print(std::string const& outputFileName) {
-    const double norm = 1./totalSamples;
+void IPCneighboursAnalysis::print(std::string const& outputFileName, const int nIPCs) {
+    const double norm = 1./(totalSamples*nIPCs);
     std::ofstream averageNumberOfNeighboursFile(outputFileName);
     //averageNumberOfNeighboursFile << std::scientific << std::setprecision(2);
 

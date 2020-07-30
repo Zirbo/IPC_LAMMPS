@@ -16,12 +16,12 @@ void IPCorientationsAnalysis3D::accumulate(VectorOfTriads const& ipcOrientations
     ++totalSamples;
 }
 
-void IPCorientationsAnalysis3D::print(std::string const& outputFileName) {
+void IPCorientationsAnalysis3D::print(std::string const& outputFileName, int const nIPCs) {
     std::ofstream outputFile(outputFileName);
     outputFile << std::scientific << std::setprecision(6);
 
-    double norm = 1./totalSamples;
     const double binSize = 1./orientationHistogramSize;
+    double norm = 1./(totalSamples*nIPCs);
 
     for (int x = 0; x < 2*orientationHistogramSize; ++x) {
         for (int y = 0; y < 2*orientationHistogramSize; ++y) {
@@ -32,7 +32,8 @@ void IPCorientationsAnalysis3D::print(std::string const& outputFileName) {
                 outputFile << (x - orientationHistogramSize)*binSize << "\t"
                            << (y - orientationHistogramSize)*binSize << "\t"
                            << (z - orientationHistogramSize)*binSize << "\t"
-                           << output*norm << "\n";
+                           << norm*output << "\t"
+                           << std::log10(norm*output) << "\n";
             }
         }
     }

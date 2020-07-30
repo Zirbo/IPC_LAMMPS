@@ -13,13 +13,13 @@ public:
         : orientationHistogramSize(nBins) {
         side = 2*orientationHistogramSize;
         square = side*side;
-        orientationsHistogram.resize(square*side, 0.);
+        orientationsHistogram.resize(square*side, 0);
     }
     void accumulate(VectorOfTriads const& ipcOrientations);
-    void print(std::string const& outputFileName);
+    void print(std::string const& outputFileName, const int nIPCs);
 
 private:
-    std::vector<double> orientationsHistogram;
+    std::vector<int> orientationsHistogram;
     int orientationHistogramSize;
     int totalSamples;
     int side;

@@ -51,7 +51,7 @@ void IPCpostprocess::run() {
     readFirstConfiguration();
 
     IPCneighboursAnalysis neighbourAnalysis(boxSide, interactionRange);
-    IPCorientationsAnalysis2D orientationsAnalysis;
+    IPCorientationsAnalysis2D orientationsAnalysis2D;
     IPCisotropicPairCorrelationFunction g_r(50, boxSide, nIPCs);
     IPCeccentricityHistogram eccentricityHistogram(patchEccentricity);
     IPCmsd msd("analysis/msd.out", ipcs, boxSide);
@@ -59,8 +59,8 @@ void IPCpostprocess::run() {
     IPCorientationsAnalysis3D orientationsAnalysis3D(10);
 
     neighbourAnalysis.accumulate(potential, ipcs);
-    orientationsAnalysis.accumulate(ipcOrientationsFirstPatch);
-    orientationsAnalysis.accumulate(ipcOrientationsSecndPatch);
+    orientationsAnalysis2D.accumulate(ipcOrientationsFirstPatch);
+    //orientationsAnalysis2D.accumulate(ipcOrientationsSecndPatch);
     g_r.accumulate(ipcs);
     eccentricityHistogram.accumulate(ipcEccentricities);
     axialityHistogram.accumulate(ipcOrientationsFirstPatch, ipcOrientationsSecndPatch);
@@ -70,20 +70,20 @@ void IPCpostprocess::run() {
    //     readNewConfiguration();
     while (readNewConfiguration()) {
         neighbourAnalysis.accumulate(potential, ipcs);
-        orientationsAnalysis.accumulate(ipcOrientationsFirstPatch);
-        orientationsAnalysis.accumulate(ipcOrientationsSecndPatch);
+        orientationsAnalysis2D.accumulate(ipcOrientationsFirstPatch);
+      //  orientationsAnalysis2D.accumulate(ipcOrientationsSecndPatch);
         g_r.accumulate(ipcs);
         eccentricityHistogram.accumulate(ipcEccentricities);
         msd.accumulateAndPrint(ipcs);
         axialityHistogram.accumulate(ipcOrientationsFirstPatch, ipcOrientationsSecndPatch);
         orientationsAnalysis3D.accumulate(ipcOrientationsFirstPatch);
     }
-    neighbourAnalysis.print("analysis/neighbourAnalysis.out");
-    orientationsAnalysis.print("analysis/orientationAnalysis.out");
+    neighbourAnalysis.print("analysis/neighbourAnalysis.out", nIPCs);
+    orientationsAnalysis2D.print("analysis/orientationAnalysis.out", nIPCs);
     g_r.print("analysis/g_r.out");
     eccentricityHistogram.print("analysis/eccentricityHistogram.out", ipcEccentricities.size());
     axialityHistogram.print("analysis/axialityHistogram.out", nIPCs);
-    orientationsAnalysis3D.print("analysis/orientationAnalysis3D.out");
+    orientationsAnalysis3D.print("analysis/orientationAnalysis3D.out", nIPCs);
 
     printFinalOrientations("analysis/finalOrientation.xyz");
 }
