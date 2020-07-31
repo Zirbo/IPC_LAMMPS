@@ -1,0 +1,6 @@
+set palette defined (0 "white", 1 "cyan", 2 "blue", 3 "red", 4 "black")
+set palette defined (0 "white", 1 "cyan", 2 "red", 3 "black", 4 "black")
+set palette defined (0 "white", 7 "white", 8 "orange", 9 "red", 10 "black", 11 "black")
+unset border; unset xtics; unset ytics; unset ztics; set view equal xyz
+
+sp "<path to file>/analysis/orientationAnalysis3D.out" u 1:2:3:4 linecolor palette pt 7
