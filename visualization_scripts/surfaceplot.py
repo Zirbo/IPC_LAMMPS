@@ -22,10 +22,10 @@ for line in fi:
   polar.append( float ( cacca[1] ) )
   color.append( float ( cacca[2] ) )
 
-x = np.zeros( (80, 40) )
-y = np.zeros( (80, 40) )
-z = np.zeros( (80, 40) )
-c = np.zeros( (80, 40) )
+x = np.zeros( (81, 41) )
+y = np.zeros( (81, 41) )
+z = np.zeros( (81, 41) )
+c = np.zeros( (81, 41) )
 
 minC = 1
 maxC = 0
@@ -40,7 +40,22 @@ for i in range(80):
       minC = aa
     if aa > maxC:
       maxC = aa
+  # without this you have a hole in the north pole
+  x[i,40] = np.cos(azimu[i*40])*np.sin(np.pi)
+  y[i,40] = np.sin(azimu[i*40])*np.sin(np.pi)
+  z[i,40] = np.cos(np.pi)
+  c[i,40] = color[i*40]
+
+# and this to avoid the missing "Lisboa to Greenwich" time zone
+for j in range(40):
+  x[80,j] = np.cos(2*np.pi)*np.sin(polar[j])
+  y[80,j] = np.sin(2*np.pi)*np.sin(polar[j])
+  z[80,j] = np.cos(polar[j])
+  c[80,j] = color[j]
+
 cRange = maxC - minC
+
+
 
 # Creating color map
 #colors=["white", "white", "white", "white", "white", "white", "orange", "red", "black"]
