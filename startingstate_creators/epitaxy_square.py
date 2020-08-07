@@ -40,14 +40,18 @@ print(nPlaneX, spacing, L, ecc, nFluidX, nFluidY, nFluidZ)
 
 nIPCs = nPlaneX*nPlaneX + nFluidX*nFluidY*nFluidZ
 
+print(nIPCs/(L*L*Lz))
+
 def absolutePBC(x):
     return x - L*floor(x/L)
 
 def absolutePBCz(z):
     return z - Lz*floor(z/Lz)
 
+s2e = (2**(-0.5)) * ecc
 p = [ [ ecc, 0., 0. ] ,
-      [ 0., ecc, 0. ] ]
+      [ 0., ecc, 0. ] ,
+      [ s2e, s2e, 0.] ]
 
 
 outputFile.write("# 3D starting configuration for LAMMPS created with a script available at\n")
@@ -144,9 +148,9 @@ for iz in range(1, nFluidZ + 1):
                  '{:3.8f}'.format(y).rjust(16) +
                  '{:3.8f}'.format(z).rjust(16) )
             # first patch
-            px = x + p[j][0];    px = absolutePBC(px)
-            py = y + p[j][1];    py = absolutePBC(py)
-            pz = z + p[j][2];    pz = absolutePBCz(pz)
+            px = x + p[2][0];    px = absolutePBC(px)
+            py = y + p[2][1];    py = absolutePBC(py)
+            pz = z + p[2][2];    pz = absolutePBCz(pz)
             atomNumber += 1
             outputFile.write("\n" + str(atomNumber).rjust(10) +
                   str(waferParticles + fluidParticles).rjust(10) +
@@ -156,9 +160,9 @@ for iz in range(1, nFluidZ + 1):
                  '{:3.8f}'.format(py).rjust(16) +
                  '{:3.8f}'.format(pz).rjust(16) )
             # second patch
-            px = x - p[j][0];    px = absolutePBC(px)
-            py = y - p[j][1];    py = absolutePBC(py)
-            pz = z - p[j][2];    pz = absolutePBCz(pz)
+            px = x - p[2][0];    px = absolutePBC(px)
+            py = y - p[2][1];    py = absolutePBC(py)
+            pz = z - p[2][2];    pz = absolutePBCz(pz)
             atomNumber += 1
             outputFile.write("\n" + str(atomNumber).rjust(10) +
                   str(waferParticles + fluidParticles).rjust(10) +
