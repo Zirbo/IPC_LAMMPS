@@ -14,8 +14,7 @@ parser = argparse.ArgumentParser(description=helpString)
 parser.add_argument('particlePerSideX', metavar='nPx', type=int, help='number of particles in the X side')
 parser.add_argument('particlePerSideY', metavar='nPy', type=int, help='number of particles in the Y side')
 parser.add_argument('zOrigin', metavar='z0', type=float, help='height of the plane')
-parser.add_argument('spacing', metavar='s', type=float, help='spacing of the fluid in the x-y plane')
-parser.add_argument('spacingZ', metavar='sz', type=float, help='spacing of the fluid in the z direction')
+parser.add_argument('density', metavar='rho', type=float, help='density')
 parser.add_argument('boxSideX', metavar='Lx', type=float, help='size of the simulation box side base (x)')
 parser.add_argument('boxSideY', metavar='Ly', type=float, help='size of the simulation box side base (y)')
 parser.add_argument('boxSideZ', metavar='Lz', type=float, help='height of the simulation box side (z)')
@@ -29,19 +28,20 @@ Lx = args.boxSideX
 Ly = args.boxSideY
 Lz = args.boxSideZ
 zOrigin = args.zOrigin
-if zOrigin < 0.25:
-    zOrigin = 0.25
-spacing = args.spacing
-spacingZ = args.spacingZ
+if zOrigin < 0.5:
+    zOrigin = 0.5
+density = args.density
 ecc = args.ecc
 nWaferX = args.particlePerSideX
 nWaferY = args.particlePerSideY
+nIPCs = int(density*Lx*Ly*Lz)
+totalWaferParticles = nWaferX*nWaferY
+totalFluidParticles = nIPCs - totalWaferParticles
+spacing = 1.6
+LR = spacing*.5
 nFluidX = int(Lx/spacing)
 nFluidY = int(Ly/spacing)
-nFluidZ = int((Lz-zOrigin)/spacingZ) - 1
-nIPCs = nWaferX*nWaferY + 4*nFluidX*nFluidY*nFluidZ
-
-print( "density = ",  nIPCs / ( Lx* Ly*Lz ) )
+nFluidZ = int((Lz-zOrigin)/spacing)
 
 
 def absolutePBCx(x):
@@ -138,22 +138,26 @@ for ix in range(nWaferX):
              '{:3.8f}'.format(pz).rjust(16) )
 
 # square lattice above the plane
-lattice_roots=( (0.0, 0.0, 0.0, 0),
-                (0.5, 0.5, 0.0, 1),
-                (0.5, 0.0, 0.5, 2),
-                (0.0, 0.5, 0.5, 3) )
+lattice_roots=( (0., 0., 0., 0),
+                (LR, LR, 0., 1),
+                (LR, 0., LR, 2),
+                (0., LR, LR, 3) )
 
 fluidParticles = 0
-for r in lattice_roots:
-    for iz in range(1, nFluidZ + 1):
-        for iy in range(0, nFluidY):
-            for ix in range(0, nFluidX):
+px = ecc/(3**.5)
+py = ecc/(3**.5)
+pz = ecc/(3**.5)
+zStart = zOrigin + 1.2
+for iz in range(nFluidZ):
+    for iy in range(nFluidY):
+        for ix in range(nFluidX):
+            for r in lattice_roots:
                 # ipc center
                 fluidParticles += 1
                 atomNumber = waferParticles*3 + (fluidParticles - 1)*3 + 1
-                x = (0.5     + r[0] + ix + 0.03*ranf())*spacing
-                y = (0.5     + r[1] + iy + 0.03*ranf())*spacing
-                z = (zOrigin + r[2] + iz + 0.03*ranf())*spacingZ
+                x = 0.5    + r[0] + ix*spacing + 0.003*ranf()
+                y = 0.5    + r[1] + iy*spacing + 0.003*ranf()
+                z = zStart + r[2] + iz*spacing + 0.003*ranf()
                 outputFile.write("\n" + str(atomNumber).rjust(10) +
                       str(waferParticles + fluidParticles).rjust(10) +
                       str(1).rjust(10) +
@@ -165,25 +169,33 @@ for r in lattice_roots:
                 px = ranf() 
                 py = ranf()
                 pz = ranf()
-                mod = (px**2 + py**2 + pz**2)**(0.5)
-                px /= mod
-                py /= mod
-                pz /= mod
+                mod = ecc/ ( (px**2 + py**2 + pz**2)**(0.5) )
+                px *= mod
+                py *= mod
+                pz *= mod
                 # patches
                 outputFile.write("\n" + str(atomNumber + 1).rjust(10) +
                       str(waferParticles + fluidParticles).rjust(10) +
                       str(2).rjust(10) +
                       str(0.5).rjust(10) +
-                     '{:3.8f}'.format(x + args.ecc*px).rjust(16) +
-                     '{:3.8f}'.format(y + args.ecc*py).rjust(16) +
-                     '{:3.8f}'.format(z + args.ecc*pz).rjust(16) )
+                     '{:3.8f}'.format(x + px).rjust(16) +
+                     '{:3.8f}'.format(y + py).rjust(16) +
+                     '{:3.8f}'.format(z + pz).rjust(16) )
                 outputFile.write("\n" + str(atomNumber + 2).rjust(10) +
                       str(waferParticles + fluidParticles).rjust(10) +
                       str(2).rjust(10) +
                       str(0.5).rjust(10) +
-                     '{:3.8f}'.format(x - args.ecc*px).rjust(16) +
-                     '{:3.8f}'.format(y - args.ecc*py).rjust(16) +
-                     '{:3.8f}'.format(z - args.ecc*pz).rjust(16) )
+                     '{:3.8f}'.format(x - px).rjust(16) +
+                     '{:3.8f}'.format(y - py).rjust(16) +
+                     '{:3.8f}'.format(z - pz).rjust(16) )
+                if ( fluidParticles == totalFluidParticles):
+                   break
+            if ( fluidParticles == totalFluidParticles):
+               break
+        if ( fluidParticles == totalFluidParticles):
+           break
+    if ( fluidParticles == totalFluidParticles):
+       break
 
 
 outputFile.write("\n")
