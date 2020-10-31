@@ -10,13 +10,27 @@
 #include <vector>
 #include <string>
 #include <cmath>
+#include <limits>
 
 #include "IPC.hpp"
 #include "IPCpostprocessPotential.hpp"
 
+struct IPCpostprocessInitializer {
+    std::string trajFilename;
+    std::string inputFilename;
+    std::string potDirName;
+    int startStep;
+    int finalStep;
+
+    IPCpostprocessInitializer() {
+        startStep = 0;
+        finalStep = std::numeric_limits<int>::max();
+    }
+};
+
 class IPCpostprocess {
 public:
-    IPCpostprocess(std::string const& trajFilename, std::string const& inputFilename, const std::string &potDirName);
+    IPCpostprocess(IPCpostprocessInitializer const& initializer);
     void run();
 
 
@@ -34,6 +48,8 @@ private:
     std::vector<double> ipcEccentricities;
     // geometry
     double ipcRadius, patchRadius, patchEccentricity, interactionRange;
+
+    int startStep, finalStep, currentStep;
 
     IPCpotential potential;
 

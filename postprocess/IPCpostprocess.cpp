@@ -13,7 +13,7 @@
 #include "dataAnalysisClasses/IPCpostprocessAxialityDeviationHistogram.hpp"
 #include "dataAnalysisClasses/IPCpostprocessOrientationsAnalysis3D.hpp"
 
-IPCpostprocess::IPCpostprocess(std::string const& trajFilename, std::string const& inputFilename, std::string const& potDirName) {
+IPCpostprocess::IPCpostprocess(const IPCpostprocessInitializer &initializer) {
 
     // clean up old data and recreate output directory
     if(system("rm -rf analysis") != 0) {
@@ -27,9 +27,9 @@ IPCpostprocess::IPCpostprocess(std::string const& trajFilename, std::string cons
     }
 
     // read input file
-    std::ifstream inputFile(inputFilename);
+    std::ifstream inputFile(initializer.inputFilename);
     if(inputFile.fail()) {
-        std::cerr << "File " << inputFilename << " could not be opened. Aborting.\n";
+        std::cerr << "File " << initializer.inputFilename << " could not be opened. Aborting.\n";
         exit(1);
     }
     inputFile >> patchRadius >> patchEccentricity;
@@ -38,17 +38,21 @@ IPCpostprocess::IPCpostprocess(std::string const& trajFilename, std::string cons
 
 
     // open simulation output file and trajectory
-    trajectoryFile.open(trajFilename);
+    trajectoryFile.open(initializer.trajFilename);
     if(trajectoryFile.fail()) {
-        std::cerr << "File " << trajFilename << " could not be opened. Aborting.\n";
+        std::cerr << "File " << initializer.trajFilename << " could not be opened. Aborting.\n";
         exit(1);
     }
 
-    potential.initialize(potDirName);
+    potential.initialize(initializer.potDirName);
+    startStep = initializer.startStep;
+    finalStep = initializer.finalStep;
 }
 
 void IPCpostprocess::run() {
     readFirstConfiguration();
+    while (currentStep < startStep)
+        readNewConfiguration();
 
     IPCneighboursAnalysis neighbourAnalysis(boxSide, interactionRange);
     IPCorientationsAnalysis2D orientationsAnalysis2D;
@@ -68,7 +72,7 @@ void IPCpostprocess::run() {
 
    // while (trajectoryFile.peek() != EOF) {
    //     readNewConfiguration();
-    while (readNewConfiguration()) {
+    while (readNewConfiguration() && currentStep < finalStep) {
         neighbourAnalysis.accumulate(potential, ipcs);
         orientationsAnalysis2D.accumulate(ipcOrientationsFirstPatch);
       //  orientationsAnalysis2D.accumulate(ipcOrientationsSecndPatch);
@@ -89,9 +93,8 @@ void IPCpostprocess::run() {
 }
 
 void IPCpostprocess::readFirstConfiguration() {
-    int timestep;
     trajectoryFile.ignore(200, '\n');
-    trajectoryFile >> timestep;
+    trajectoryFile >> currentStep;
     trajectoryFile.ignore(200, '\n');
     trajectoryFile.ignore(200, '\n');
     trajectoryFile >> nIPCs;
@@ -109,16 +112,16 @@ void IPCpostprocess::readFirstConfiguration() {
     ipcEccentricities.resize(2*nIPCs);
 
     readIPCconfiguration();
-    computeOrientations();
+    if (currentStep > startStep)
+        computeOrientations();
 
-    std::cout << timestep << "\n";
+    std::cout << currentStep << "\n";
 }
 
 bool IPCpostprocess::readNewConfiguration() {
-    int timestep;
     trajectoryFile.ignore(200, '\n');
     trajectoryFile.ignore(200, '\n');
-    trajectoryFile >> timestep;
+    trajectoryFile >> currentStep;
     if (trajectoryFile.eof())
         return false;
     // ignore the rest of the header, it must not change
@@ -126,9 +129,10 @@ bool IPCpostprocess::readNewConfiguration() {
         trajectoryFile.ignore(200, '\n');
 
     readIPCconfiguration();
-    computeOrientations();
+    if (currentStep > startStep && currentStep < finalStep)
+        computeOrientations();
 
-    std::cout << timestep << std::endl; //"\n";
+    std::cout << currentStep << std::endl; //"\n";
     return true;
 }
 
