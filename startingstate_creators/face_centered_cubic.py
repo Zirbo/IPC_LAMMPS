@@ -36,7 +36,7 @@ outputFile.write("\n" + str(2*args.nIPCs).rjust(16) + " bonds")
 outputFile.write("\n" + str(  args.nIPCs).rjust(16) + " angles")
 outputFile.write("\n")
 
-outputFile.write("\n" + str(2).rjust(16) + " atom types")
+outputFile.write("\n" + str(3).rjust(16) + " atom types")
 outputFile.write("\n" + str(1).rjust(16) + " bond types")
 outputFile.write("\n" + str(1).rjust(16) + " angle types")
 outputFile.write("\n")
@@ -53,6 +53,7 @@ outputFile.write("\nMasses")
 outputFile.write("\n#  atomtype, mass")
 outputFile.write("\n" + str(1).rjust(10) + str(2.0).rjust(10))
 outputFile.write("\n" + str(2).rjust(10) + str(0.5).rjust(10))
+outputFile.write("\n" + str(3).rjust(10) + str(0.5).rjust(10))
 
 outputFile.write("\n")
 outputFile.write("\nAtoms")
@@ -92,7 +93,7 @@ for r in lattice_roots:
                      '{:3.8f}'.format(z + args.ecc*pz).rjust(16) )
                 outputFile.write("\n" + str(i+2).rjust(10) +
                       str(ipcNum).rjust(10) +
-                      str(2).rjust(10) +
+                      str(3).rjust(10) +
                       str(0.5).rjust(10) +
                      '{:3.8f}'.format(x - args.ecc*px).rjust(16) +
                      '{:3.8f}'.format(y - args.ecc*py).rjust(16) +

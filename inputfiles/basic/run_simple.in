@@ -1,5 +1,5 @@
 ###########################
-# IPC LAMMPS - epitaxy    #
+# IPC LAMMPS              #
 ###########################
 
 dimension      3
@@ -20,7 +20,10 @@ pair_modify    mix geometric tail yes
 # force field parameters
 pair_coeff     1 1 ../lammpspot_45n/BB.table BB
 pair_coeff     1 2 ../lammpspot_45n/Bs1.table Bs1
+pair_coeff     1 3 ../lammpspot_45n/Bs2.table Bs2
 pair_coeff     2 2 ../lammpspot_45n/s1s1.table s1s1
+pair_coeff     2 3 ../lammpspot_45n/s1s2.table s1s2
+pair_coeff     3 3 ../lammpspot_45n/s2s2.table s2s2
 bond_coeff     1 9999.9 0.22     # center-patch distance
 angle_coeff    1 9999.9 180.0    # patch-patch angle
 
