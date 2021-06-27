@@ -62,7 +62,7 @@ outputFile.write("\n" + str(3*args.nIPCs).rjust(16) + " bonds")
 outputFile.write("\n" + str(3*args.nIPCs).rjust(16) + " angles")
 outputFile.write("\n")
 
-outputFile.write("\n" + str(3).rjust(16) + " atom types")
+outputFile.write("\n" + str(2).rjust(16) + " atom types")
 outputFile.write("\n" + str(1).rjust(16) + " bond types")
 outputFile.write("\n" + str(1).rjust(16) + " angle types")
 outputFile.write("\n")
@@ -96,7 +96,7 @@ for r in lattice_roots:
                 outputFile.write("\n" + str(i).rjust(10) +
                       str(ipcNum).rjust(10) +
                       str(1).rjust(10) +
-                      str(-1.).rjust(10) +
+                      str(-0.9).rjust(10) +
                      '{:3.8f}'.format(x).rjust(16) +
                      '{:3.8f}'.format(y).rjust(16) +
                      '{:3.8f}'.format(z).rjust(16) )
@@ -113,21 +113,21 @@ for r in lattice_roots:
                 outputFile.write("\n" + str(i+1).rjust(10) +
                       str(ipcNum).rjust(10) +
                       str(2).rjust(10) +
-                      str(0.5).rjust(10) +
+                      str(0.3).rjust(10) +
                      '{:3.8f}'.format(x + args.ecc*p1x).rjust(16) +
                      '{:3.8f}'.format(y + args.ecc*p1y).rjust(16) +
                      '{:3.8f}'.format(z + args.ecc*p1z).rjust(16) )
                 outputFile.write("\n" + str(i+2).rjust(10) +
                       str(ipcNum).rjust(10) +
-                      str(3).rjust(10) +
-                      str(0.5).rjust(10) +
+                      str(2).rjust(10) +
+                      str(0.3).rjust(10) +
                      '{:3.8f}'.format(x + args.ecc*p2x).rjust(16) +
                      '{:3.8f}'.format(y + args.ecc*p2y).rjust(16) +
                      '{:3.8f}'.format(z + args.ecc*p2z).rjust(16) )
                 outputFile.write("\n" + str(i+3).rjust(10) +
                       str(ipcNum).rjust(10) +
-                      str(3).rjust(10) +
-                      str(0.5).rjust(10) +
+                      str(2).rjust(10) +
+                      str(0.3).rjust(10) +
                      '{:3.8f}'.format(x + args.ecc*p3x).rjust(16) +
                      '{:3.8f}'.format(y + args.ecc*p3y).rjust(16) +
                      '{:3.8f}'.format(z + args.ecc*p3z).rjust(16) )
