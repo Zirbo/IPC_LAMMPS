@@ -37,6 +37,23 @@ PotentialForLammps::PotentialForLammps(
     interactionRange = 2*ipcRadius;
 
     computeSiteSitePotentials();
+
+
+    if (ipcType == IpcType::JANUS) {
+        plotOrientations.push_back("JANUS_SS");
+        plotOrientations.push_back("JANUS_SP");
+        plotOrientations.push_back("JANUS_SE");
+        plotOrientations.push_back("JANUS_EP");
+        plotOrientations.push_back("JANUS_PP");
+        plotOrientations.push_back("JANUS_EE");
+    } else {
+        plotOrientations.push_back("EE");
+        plotOrientations.push_back("Ep1");
+        plotOrientations.push_back("Ep2");
+        plotOrientations.push_back("p1p2");
+        plotOrientations.push_back("p1p1");
+        plotOrientations.push_back("p2p2");
+    }
 }
 
 static double computeOmega(double Ra, double Rb, double rab) {
@@ -139,7 +156,7 @@ void PotentialForLammps::printLAMMPSpotentialsToFile(const std::string &outputDi
 
         for ( size_t i = 1; i < potentialSteps; ++i) {
             const double r = i*samplingStep;
-            potentialOutputFile << i << "\t" << r << "\t";
+            potentialOutputFile << i << '\t' << r << '\t';
 
             // compute force and potential depending on type and cutoff
             double printPotential, printForce;
@@ -163,7 +180,7 @@ void PotentialForLammps::printLAMMPSpotentialsToFile(const std::string &outputDi
                 printForce = (fs2s2[i]*r < -cutoffValue )? -cutoffValue : -fs2s2[i];
             }
             // finally, you can print
-            potentialOutputFile << printPotential << "\t" << printForce << "\n";
+            potentialOutputFile << printPotential << '\t' << printForce << '\n';
         }
         potentialOutputFile.close();
     }
@@ -177,40 +194,19 @@ void PotentialForLammps::printRadialPotentialsToFile(std::string const& outputDi
     if(mkdir(dirName.c_str(), 0777) != 0)
         error("Problem while creating the directory for radial potentials.\n");
 
-    // prepare strings for defining file names
-    std::string interactionType [6];
-    if (ipcType == IpcType::JANUS) {
-        interactionType[0] = "skip";
-        interactionType[1] = "skip";
-        interactionType[2] = "skip";
-        interactionType[3] = "JANUS_EP";
-        interactionType[4] = "JANUS_PP";
-        interactionType[5] = "JANUS_EE";
-    } else {
-        interactionType[0] = "EE";
-        interactionType[1] = "Ep1";
-        interactionType[2] = "Ep2";
-        interactionType[3] = "p1p2";
-        interactionType[4] = "p1p1";
-        interactionType[5] = "p2p2";
-    }
-
-    for (int type = 0; type < 6; ++type) {
-        if (interactionType[type] == "skip") {
-            continue;
-        }
+    for (int type = 0; type < plotOrientations.size(); ++type) {
         // create the output file
-        std::string fileName = dirName + '/' + interactionType[type] + ".dat";
+        std::string fileName = dirName + '/' + plotOrientations[type] + ".dat";
         std::ofstream potentialOutputFile(fileName);
         potentialOutputFile << std::scientific << std::setprecision(6);
 
         for ( double r = 1.0; r < interactionRange; r += samplingStep) {
-            potentialOutputFile << r << "\t";
+            potentialOutputFile << r << '\t';
 
             size_t iBB = size_t(r/samplingStep);
             size_t iBs1 = size_t(  (r - firstPatchEccentricity)/samplingStep  );
             size_t iBs2 = size_t(  (r - secndPatchEccentricity)/samplingStep  );
-            // compute force and potential depending on type and cutoff
+            // compute potential depending on type and cutoff
             double printPotential;
             if( type == 0) {
                 printPotential = uHS[iBB] + uBB[iBB];
@@ -229,7 +225,7 @@ void PotentialForLammps::printRadialPotentialsToFile(std::string const& outputDi
                 printPotential = uHS[iBB] + uBB[iBB] + uBs1[iBs1] + uBs2[iBs2] + us2s2[is2s2];
             }
             // finally, you can print
-            potentialOutputFile << printPotential << "\n";
+            potentialOutputFile << printPotential << '\n';
         }
         potentialOutputFile.close();
     }

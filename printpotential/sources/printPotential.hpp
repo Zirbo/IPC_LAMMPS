@@ -34,6 +34,7 @@ private:
 
     std::vector<double> uHS, uBB, uBs1, uBs2, us1s2, us1s1, us2s2;
     std::vector<double> fHS, fBB, fBs1, fBs2, fs1s2, fs1s1, fs2s2;
+    std::vector<std::string> plotOrientations;
 
     void computeSiteSitePotentials();
 };
