@@ -5,6 +5,8 @@
 #include <cmath>
 #include <iomanip>
 
+#include <sys/stat.h>
+
 #include "printPotential.hpp"
 
 PotentialForLammps::PotentialForLammps(
@@ -25,7 +27,9 @@ PotentialForLammps::PotentialForLammps(
     inputFile.close();
 
     // patch geometry integrity check
-    if ( std::abs( ( firstPatchEccentricity + firstPatchRadius ) - ( secndPatchEccentricity + secndPatchRadius ) ) >= 1e-10 )
+    double firstDiameter = firstPatchEccentricity + firstPatchRadius;
+    double secondDiameter = secndPatchEccentricity + secndPatchRadius;
+    if (std::abs(firstDiameter - secondDiameter) >= 1e-10 )
         error("eccentricities and radii are not consistent!\n");
 
     fakeHSdiameter = 1.0;
@@ -112,7 +116,6 @@ void PotentialForLammps::printLAMMPSpotentialsToFile(const std::string &outputDi
         error("Problem while creating the directory.\n");
 
     // prepare strings for defining file names
-    const std::string extension(".table");
     std::string interactionType [6];
     interactionType[0] = "BB";      interactionType[1] = "Bs1";     interactionType[2] = "Bs2";
     interactionType[3] = "s1s2";    interactionType[4] = "s1s1";    interactionType[5] = "s2s2";
@@ -121,7 +124,7 @@ void PotentialForLammps::printLAMMPSpotentialsToFile(const std::string &outputDi
 
     for (int type = 0; type < 6; ++type) {
         // create the output file
-        std::string fileName = outputDirName + "/" + interactionType[type] + extension;
+        std::string fileName = outputDirName + "/" + interactionType[type] + ".table";
         std::ofstream potentialOutputFile(fileName);
         potentialOutputFile << "# potentials for lammps\n\n" << interactionType[type] << "\nN " << potentialSteps-1 << "\n\n"; // -1 because we don't print r=0
         potentialOutputFile << std::scientific << std::setprecision(6);
@@ -159,23 +162,37 @@ void PotentialForLammps::printLAMMPSpotentialsToFile(const std::string &outputDi
 
 }
 
-
-
 void PotentialForLammps::printPotentialsToFileForVisualization(std::string const& outputDirName) {
+void PotentialForLammps::printRadialPotentialsToFile(std::string const& outputDirName) {
     // create output directory
-    const std::string makedir = "mkdir -p " + outputDirName + "_EE_EP_PP_visualization";
-    if(system(makedir.c_str()) != 0)
-        error("Problem while creating the directory.\n");
+    const std::string dirName = outputDirName + "_radial_plots";
+    if(mkdir(dirName.c_str(), 0777) != 0)
+        error("Problem while creating the directory for radial potentials.\n");
 
     // prepare strings for defining file names
-    const std::string extension(".dat");
     std::string interactionType [6];
-    interactionType[0] = "EE";      interactionType[1] = "Ep1";     interactionType[2] = "Ep2";
-    interactionType[3] = "p1p2";    interactionType[4] = "p1p1";    interactionType[5] = "p2Pp";
+    if (ipcType == IpcType::JANUS) {
+        interactionType[0] = "skip";
+        interactionType[1] = "skip";
+        interactionType[2] = "skip";
+        interactionType[3] = "JANUS_EP";
+        interactionType[4] = "JANUS_PP";
+        interactionType[5] = "JANUS_EE";
+    } else {
+        interactionType[0] = "EE";
+        interactionType[1] = "Ep1";
+        interactionType[2] = "Ep2";
+        interactionType[3] = "p1p2";
+        interactionType[4] = "p1p1";
+        interactionType[5] = "p2p2";
+    }
 
     for (int type = 0; type < 6; ++type) {
+        if (interactionType[type] == "skip") {
+            continue;
+        }
         // create the output file
-        std::string fileName = outputDirName + "_EE_EP_PP_visualization/" + interactionType[type] + extension;
+        std::string fileName = dirName + '/' + interactionType[type] + ".dat";
         std::ofstream potentialOutputFile(fileName);
         potentialOutputFile << std::scientific << std::setprecision(6);
 
