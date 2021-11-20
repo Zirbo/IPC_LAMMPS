@@ -21,7 +21,7 @@ pushd sources
   if [ ! -f compute.out ]; then
     g++ printPotential.cpp main.cpp -o compute.out
   fi
-  ./compute.out inputfile_${model_name}.txt ../lammpspot_${model_name}
+  ./compute.out -i inputfile_${model_name}.txt -o ../lammpspot_${model_name}
   mv inputfile_${model_name}.txt ..
   mv MC_inputfile_${model_name}.txt ..
 popd 

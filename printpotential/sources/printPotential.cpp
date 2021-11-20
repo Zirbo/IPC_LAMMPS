@@ -7,7 +7,10 @@
 
 #include "printPotential.hpp"
 
-PotentialForLammps::PotentialForLammps(const std::string &inputFileName) {
+PotentialForLammps::PotentialForLammps(
+            const std::string &inputFileName,
+            const IpcType type) :
+        ipcType{type} {
     // read input.in file
     std::ifstream inputFile(inputFileName);
     if(inputFile.fail())

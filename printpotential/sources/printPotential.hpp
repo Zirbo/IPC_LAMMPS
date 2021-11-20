@@ -5,9 +5,14 @@
 #include <cmath>
 #include <iomanip>
 
+enum class IpcType {
+    JANUS,
+    IPC,
+};
+
 class PotentialForLammps {
 public:
-    PotentialForLammps(std::string const& inputFileName);
+    PotentialForLammps(std::string const& inputFileName, const IpcType ipcType);
     void computeSiteSitePotentials();
     void printLAMMPSpotentialsToFile(std::string const& outputDirName);
     void printPotentialsToFileForVisualization(std::string const& outputDirName);
@@ -19,6 +24,7 @@ public:
 
 
 private:
+    IpcType ipcType;
     double e_BB, e_Bs1, e_Bs2, e_s1s1, e_s1s2, e_s2s2, e_min;
     double firstPatchEccentricity, firstPatchRadius;
     double secndPatchEccentricity, secndPatchRadius;
