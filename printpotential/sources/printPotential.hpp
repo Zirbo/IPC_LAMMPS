@@ -13,7 +13,6 @@ enum class IpcType {
 class PotentialForLammps {
 public:
     PotentialForLammps(std::string const& inputFileName, const IpcType ipcType);
-    void computeSiteSitePotentials();
     void printLAMMPSpotentialsToFile(std::string const& outputDirName);
     void printPotentialsToFileForVisualization(std::string const& outputDirName);
 
@@ -36,6 +35,5 @@ private:
     std::vector<double> uHS, uBB, uBs1, uBs2, us1s2, us1s1, us2s2;
     std::vector<double> fHS, fBB, fBs1, fBs2, fs1s2, fs1s1, fs2s2;
 
-    double computeOmega(double Ra, double Rb, double rab);
-    double computeOmegaRadialDerivative(double Ra, double Rb, double rab);
+    void computeSiteSitePotentials();
 };

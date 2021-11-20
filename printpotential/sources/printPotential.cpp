@@ -35,9 +35,11 @@ PotentialForLammps::PotentialForLammps(
     fakeHSdiameter = 1.0;
     ipcRadius = firstPatchEccentricity + firstPatchRadius;
     interactionRange = 2*ipcRadius;
+
+    computeSiteSitePotentials();
 }
 
-double PotentialForLammps::computeOmega(double Ra, double Rb, double rab) {
+static double computeOmega(double Ra, double Rb, double rab) {
     // BKL paper, formula 18
     if ( rab > Ra+Rb )
         return 0.;
@@ -50,7 +52,7 @@ double PotentialForLammps::computeOmega(double Ra, double Rb, double rab) {
     }
 }
 
-double PotentialForLammps::computeOmegaRadialDerivative(double Ra, double Rb, double rab) {
+static double computeOmegaRadialDerivative(double Ra, double Rb, double rab) {
     // BKL paper, derivative of formula 18
     if ( rab >= Ra+Rb || rab <= fabs(Ra-Rb) )
         return 0.;

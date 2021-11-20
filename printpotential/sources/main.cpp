@@ -37,7 +37,6 @@ int main( int argc, char *argv[] ) {
     }
 
     PotentialForLammps potential(inputFileName, type);
-    potential.computeSiteSitePotentials();
     potential.printLAMMPSpotentialsToFile(outputDirName);
     potential.printPotentialsToFileForVisualization(outputDirName);
 }
