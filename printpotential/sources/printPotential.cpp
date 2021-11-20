@@ -119,8 +119,12 @@ void PotentialForLammps::printLAMMPSpotentialsToFile(const std::string &outputDi
 
     // prepare strings for defining file names
     std::string interactionType [6];
-    interactionType[0] = "BB";      interactionType[1] = "Bs1";     interactionType[2] = "Bs2";
-    interactionType[3] = "s1s2";    interactionType[4] = "s1s1";    interactionType[5] = "s2s2";
+    interactionType[0] = "BB";
+    interactionType[1] = "Bs1";
+    interactionType[2] = "Bs2";
+    interactionType[3] = "s1s2";
+    interactionType[4] = "s1s1";
+    interactionType[5] = "s2s2";
 
     const size_t potentialSteps = uHS.size();
 
@@ -128,7 +132,9 @@ void PotentialForLammps::printLAMMPSpotentialsToFile(const std::string &outputDi
         // create the output file
         std::string fileName = outputDirName + "/" + interactionType[type] + ".table";
         std::ofstream potentialOutputFile(fileName);
-        potentialOutputFile << "# potentials for lammps\n\n" << interactionType[type] << "\nN " << potentialSteps-1 << "\n\n"; // -1 because we don't print r=0
+        potentialOutputFile << "# potentials for lammps\n\n"
+            << interactionType[type] << "\nN " << potentialSteps-1 << "\n\n";
+            // -1 because we don't print r=0
         potentialOutputFile << std::scientific << std::setprecision(6);
 
         for ( size_t i = 1; i < potentialSteps; ++i) {
