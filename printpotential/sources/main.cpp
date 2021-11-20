@@ -1,4 +1,5 @@
 #include <unistd.h>
+#include <iostream>
 #include <cstring>
 
 #include "printPotential.hpp"
@@ -38,5 +39,6 @@ int main( int argc, char *argv[] ) {
 
     PotentialForLammps potential(inputFileName, type);
     potential.printLAMMPSpotentialsToFile(outputDirName);
-    potential.printPotentialsToFileForVisualization(outputDirName);
+    potential.printRadialPotentialsToFile(outputDirName);
+    potential.printAngularPotentialsToFile(outputDirName);
 }

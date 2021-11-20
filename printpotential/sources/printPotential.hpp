@@ -1,4 +1,3 @@
-#include <iostream>
 #include <fstream>
 #include <vector>
 #include <string>
@@ -14,14 +13,8 @@ class PotentialForLammps {
 public:
     PotentialForLammps(std::string const& inputFileName, const IpcType ipcType);
     void printLAMMPSpotentialsToFile(std::string const& outputDirName);
-    void printPotentialsToFileForVisualization(std::string const& outputDirName);
-
-    static void error(std::string const & errorMessage) {
-    std::cerr << errorMessage;
-    exit(1);
-}
-
-
+    void printRadialPotentialsToFile(std::string const& outputDirName);
+    void printAngularPotentialsToFile(std::string const& outputDirName);
 private:
     IpcType ipcType;
     double e_BB, e_Bs1, e_Bs2, e_s1s1, e_s1s2, e_s2s2, e_min;

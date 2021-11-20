@@ -9,6 +9,11 @@
 
 #include "printPotential.hpp"
 
+static void error(std::string const & errorMessage) {
+    std::cerr << errorMessage;
+    exit(EXIT_FAILURE);
+}
+
 PotentialForLammps::PotentialForLammps(
             const std::string &inputFileName,
             const IpcType type) :
@@ -37,7 +42,6 @@ PotentialForLammps::PotentialForLammps(
     interactionRange = 2*ipcRadius;
 
     computeSiteSitePotentials();
-
 
     if (ipcType == IpcType::JANUS) {
         plotOrientations.push_back("JANUS_SS");
@@ -187,7 +191,6 @@ void PotentialForLammps::printLAMMPSpotentialsToFile(const std::string &outputDi
 
 }
 
-void PotentialForLammps::printPotentialsToFileForVisualization(std::string const& outputDirName) {
 void PotentialForLammps::printRadialPotentialsToFile(std::string const& outputDirName) {
     // create output directory
     const std::string dirName = outputDirName + "_radial_plots";
@@ -230,4 +233,26 @@ void PotentialForLammps::printRadialPotentialsToFile(std::string const& outputDi
         potentialOutputFile.close();
     }
 
+}
+
+void PotentialForLammps::printAngularPotentialsToFile(std::string const& outputDirName) {
+    error("not implemented yet");
+    // create output directory
+    const std::string dirName = outputDirName + "_angular_plots";
+    if(mkdir(dirName.c_str(), 0777) != 0)
+        error("Problem while creating the directory.\n");
+
+    for (int type = 0; type < plotOrientations.size(); ++type) {
+        // create the output file
+        std::string fileName = dirName + '/' + plotOrientations[type] + ".dat";
+        std::ofstream potentialOutputFile(fileName);
+        potentialOutputFile << std::scientific << std::setprecision(6);
+
+        double rContact = size_t(1.0/samplingStep);
+        for (double angle = 0; angle < 90.; angle += 1.) {
+            // compute potential depending on type and cutoff
+            double printPotential;
+            potentialOutputFile << angle << '\t' << printPotential << '\n';
+        }
+    }
 }
