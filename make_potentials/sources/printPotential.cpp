@@ -15,7 +15,8 @@ static void error(std::string const& errorMessage) {
 }
 
 PotentialForLammps::PotentialForLammps(const std::string& inputFileName,
-                                       const IpcType type)
+                                       const IpcType type,
+                                       bool startFromContactValues)
     : ipcType{type} {
   // read input.in file
   std::ifstream inputFile(inputFileName);
@@ -39,27 +40,26 @@ PotentialForLammps::PotentialForLammps(const std::string& inputFileName,
   samplingStep = 1.0e-05;
   cutoffValue = 1.0e+06;
 
-  ipcRadius = 0.5*(1.0 + delta);
+  ipcRadius = 0.5 * (1.0 + delta);
   interactionRange = 2 * ipcRadius;
 
   radius_p1 = ipcRadius - eccentricity_p1;
   if (type != IpcType::ASYM_IPC) {
-  	eccentricity_p2 = eccentricity_p1;
-	radius_p2 = radius_p1;
+    eccentricity_p2 = eccentricity_p1;
+    radius_p2 = radius_p1;
   } else {
     radius_p2 = ipcRadius - eccentricity_p2;
   }
 
   if (type == IpcType::JANUS) {
-	e_Bs2 = 0;
-	e_s2s2 = 0;
-	e_s1s2 = 0;
+    e_Bs2 = 0;
+    e_s2s2 = 0;
+    e_s1s2 = 0;
   } else if (type == IpcType::IPC) {
-	e_Bs2 = e_Bs1;
-	e_s2s2 = e_s1s1;
-	e_s1s2 = e_s1s1;
+    e_Bs2 = e_Bs1;
+    e_s2s2 = e_s1s1;
+    e_s1s2 = e_s1s1;
   }
-
 
   computeSiteSitePotentials();
 }
@@ -116,25 +116,22 @@ void PotentialForLammps::computeSiteSitePotentials() {
     uBB[i] = (e_BB / e_min) * computeOmega(ipcRadius, ipcRadius, r);
     uBs1[i] = (e_Bs1 / e_min) * computeOmega(ipcRadius, radius_p1, r);
     uBs2[i] = (e_Bs2 / e_min) * computeOmega(ipcRadius, radius_p2, r);
-    us1s2[i] =
-        (e_s1s2 / e_min) * computeOmega(radius_p1, radius_p2, r);
-    us2s2[i] =
-        (e_s2s2 / e_min) * computeOmega(radius_p2, radius_p2, r);
-    us1s1[i] =
-        (e_s1s1 / e_min) * computeOmega(radius_p1, radius_p1, r);
+    us1s2[i] = (e_s1s2 / e_min) * computeOmega(radius_p1, radius_p2, r);
+    us2s2[i] = (e_s2s2 / e_min) * computeOmega(radius_p2, radius_p2, r);
+    us1s1[i] = (e_s1s1 / e_min) * computeOmega(radius_p1, radius_p1, r);
 
     fBB[i] =
         (e_BB / e_min) * computeOmegaRadialDerivative(ipcRadius, ipcRadius, r);
-    fBs1[i] = (e_Bs1 / e_min) *
-              computeOmegaRadialDerivative(ipcRadius, radius_p1, r);
-    fBs2[i] = (e_Bs2 / e_min) *
-              computeOmegaRadialDerivative(ipcRadius, radius_p2, r);
-    fs1s2[i] = (e_s1s2 / e_min) * computeOmegaRadialDerivative(
-                                      radius_p1, radius_p2, r);
-    fs2s2[i] = (e_s2s2 / e_min) * computeOmegaRadialDerivative(
-                                      radius_p2, radius_p2, r);
-    fs1s1[i] = (e_s1s1 / e_min) * computeOmegaRadialDerivative(
-                                      radius_p1, radius_p1, r);
+    fBs1[i] =
+        (e_Bs1 / e_min) * computeOmegaRadialDerivative(ipcRadius, radius_p1, r);
+    fBs2[i] =
+        (e_Bs2 / e_min) * computeOmegaRadialDerivative(ipcRadius, radius_p2, r);
+    fs1s2[i] = (e_s1s2 / e_min) *
+               computeOmegaRadialDerivative(radius_p1, radius_p2, r);
+    fs2s2[i] = (e_s2s2 / e_min) *
+               computeOmegaRadialDerivative(radius_p2, radius_p2, r);
+    fs1s1[i] = (e_s1s1 / e_min) *
+               computeOmegaRadialDerivative(radius_p1, radius_p1, r);
 
     if (r <= fakeHSdiameter) {
       // setting up a Fake Hard Sphere Core
@@ -255,8 +252,7 @@ void PotentialForLammps::printRadialPotentialsToFile(
         printPotential = uHS[iBB] + uBB[iBB] + uBs2[iBs2];
       } else if (type == 3) {
         size_t is1s2 =
-            size_t((r - eccentricity_p1 - eccentricity_p2) /
-                   samplingStep);
+            size_t((r - eccentricity_p1 - eccentricity_p2) / samplingStep);
         printPotential =
             uHS[iBB] + uBB[iBB] + uBs1[iBs1] + uBs2[iBs2] + us1s2[is1s2];
       } else if (type == 4) {
@@ -366,10 +362,9 @@ void PotentialForLammps::printAngularPotentialsToFile(
         potential += pot;
       }
       // p1p1
-      dx = eccentricity_p1 * cos(theta_1) + 1.0 -
-           eccentricity_p1 * cos(theta_2);
-      dy = eccentricity_p1 * sin(theta_1) -
-           eccentricity_p1 * sin(theta_2);
+      dx =
+          eccentricity_p1 * cos(theta_1) + 1.0 - eccentricity_p1 * cos(theta_2);
+      dy = eccentricity_p1 * sin(theta_1) - eccentricity_p1 * sin(theta_2);
       distTab = dist(dx, dy);
       if (distTab != 0) {
         double pot = us1s1[distTab];
@@ -377,10 +372,9 @@ void PotentialForLammps::printAngularPotentialsToFile(
         potential += pot;
       }
       // p1p2
-      dx = eccentricity_p1 * cos(theta_1) + 1.0 +
-           eccentricity_p2 * cos(theta_2);
-      dy = eccentricity_p1 * sin(theta_1) +
-           eccentricity_p2 * sin(theta_2);
+      dx =
+          eccentricity_p1 * cos(theta_1) + 1.0 + eccentricity_p2 * cos(theta_2);
+      dy = eccentricity_p1 * sin(theta_1) + eccentricity_p2 * sin(theta_2);
       distTab = dist(dx, dy);
       if (distTab != 0) {
         double pot = us1s2[distTab];
@@ -398,10 +392,9 @@ void PotentialForLammps::printAngularPotentialsToFile(
         potential += pot;
       }
       // p2p1
-      dx = 1.0 - eccentricity_p2 * cos(theta_1) -
-           eccentricity_p1 * cos(theta_2);
-      dy = eccentricity_p2 * sin(theta_1) +
-           eccentricity_p1 * sin(theta_2);
+      dx =
+          1.0 - eccentricity_p2 * cos(theta_1) - eccentricity_p1 * cos(theta_2);
+      dy = eccentricity_p2 * sin(theta_1) + eccentricity_p1 * sin(theta_2);
       distTab = dist(dx, dy);
       if (distTab != 0) {
         double pot = us1s2[distTab];
@@ -409,10 +402,9 @@ void PotentialForLammps::printAngularPotentialsToFile(
         potential += pot;
       }
       // p2p2
-      dx = 1.0 - eccentricity_p2 * cos(theta_1) +
-           eccentricity_p2 * cos(theta_2);
-      dy = eccentricity_p2 * sin(theta_1) -
-           eccentricity_p2 * sin(theta_2);
+      dx =
+          1.0 - eccentricity_p2 * cos(theta_1) + eccentricity_p2 * cos(theta_2);
+      dy = eccentricity_p2 * sin(theta_1) - eccentricity_p2 * sin(theta_2);
       distTab = dist(dx, dy);
       if (distTab != 0) {
         double pot = us2s2[distTab];

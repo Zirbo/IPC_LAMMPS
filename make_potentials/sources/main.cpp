@@ -7,6 +7,7 @@
 
 static void usage() {
   std::cerr << "Usage:\n"
+            << "\t-e start from contact values\n"
             << "\t-m model (janus, ipc, asym-ipc)\n"
             << "\t-i inputfile\n"
             << "\t-o output dir\n";
@@ -17,10 +18,14 @@ int main(int argc, char* argv[]) {
   IpcType type = IpcType::NONE;
   std::string inputFileName;
   std::string outputDirName;
+  bool startFromContactValues = false;
 
   int opt = 0;
-  while ((opt = getopt(argc, argv, "m:i:o:")) != -1) {
+  while ((opt = getopt(argc, argv, "em:i:o:")) != -1) {
     switch (opt) {
+      case 'e':
+        startFromContactValues = true;
+        break;
       case 'm':
         if (strcmp(optarg, "janus") == 0) {
           type = IpcType::JANUS;
@@ -45,7 +50,7 @@ int main(int argc, char* argv[]) {
     usage();
   }
 
-  PotentialForLammps potential(inputFileName, type);
+  PotentialForLammps potential(inputFileName, type, startFromContactValues);
   potential.printLAMMPSpotentialsToFile(outputDirName);
   potential.printRadialPotentialsToFile(outputDirName);
   potential.printAngularPotentialsToFile(outputDirName);

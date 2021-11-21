@@ -13,7 +13,8 @@ enum class IpcType {
 
 class PotentialForLammps {
  public:
-  PotentialForLammps(std::string const &inputFileName, const IpcType ipcType);
+  PotentialForLammps(std::string const &inputFileName, const IpcType ipcType,
+                     bool startFromContactValues);
   void printLAMMPSpotentialsToFile(std::string const &outputDirName);
   void printRadialPotentialsToFile(std::string const &outputDirName);
   void printAngularPotentialsToFile(std::string const &outputDirName);
