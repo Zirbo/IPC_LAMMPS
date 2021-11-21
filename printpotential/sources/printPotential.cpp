@@ -42,22 +42,6 @@ PotentialForLammps::PotentialForLammps(
     interactionRange = 2*ipcRadius;
 
     computeSiteSitePotentials();
-
-    if (ipcType == IpcType::JANUS) {
-        plotOrientations.push_back("JANUS_SS");
-        plotOrientations.push_back("JANUS_SP");
-        plotOrientations.push_back("JANUS_SE");
-        plotOrientations.push_back("JANUS_EP");
-        plotOrientations.push_back("JANUS_PP");
-        plotOrientations.push_back("JANUS_EE");
-    } else {
-        plotOrientations.push_back("EE");
-        plotOrientations.push_back("Ep1");
-        plotOrientations.push_back("Ep2");
-        plotOrientations.push_back("p1p2");
-        plotOrientations.push_back("p1p1");
-        plotOrientations.push_back("p2p2");
-    }
 }
 
 static double computeOmega(double Ra, double Rb, double rab) {
@@ -197,6 +181,23 @@ void PotentialForLammps::printRadialPotentialsToFile(std::string const& outputDi
     if(mkdir(dirName.c_str(), 0777) != 0)
         error("Problem while creating the directory for radial potentials.\n");
 
+    std::vector<std::string> plotOrientations;
+    if (ipcType == IpcType::JANUS) {
+        plotOrientations.push_back("JANUS_SS");
+        plotOrientations.push_back("JANUS_SP");
+        plotOrientations.push_back("JANUS_SE");
+        plotOrientations.push_back("JANUS_EP");
+        plotOrientations.push_back("JANUS_PP");
+        plotOrientations.push_back("JANUS_EE");
+    } else {
+        plotOrientations.push_back("EE");
+        plotOrientations.push_back("Ep1");
+        plotOrientations.push_back("Ep2");
+        plotOrientations.push_back("p1p2");
+        plotOrientations.push_back("p1p1");
+        plotOrientations.push_back("p2p2");
+    }
+
     for (int type = 0; type < plotOrientations.size(); ++type) {
         // create the output file
         std::string fileName = dirName + '/' + plotOrientations[type] + ".dat";
@@ -235,24 +236,146 @@ void PotentialForLammps::printRadialPotentialsToFile(std::string const& outputDi
 
 }
 
+size_t PotentialForLammps::dist(double x, double y) {
+    double distance = std::sqrt(x*x + y*y);
+    // std::cout << "dist = (" << x << ", " << y << ")\n";
+    size_t distanceTab = size_t(distance/samplingStep);
+    if (distanceTab > uHS.size()) {
+        return 0;
+    }
+    return distanceTab;
+}
+
+static void log(std::string orient, size_t dist, double pot) {
+    // std::cout << orient << " dist: " << dist*1e-5 << ", pot: " << pot << "\n";
+}
+
 void PotentialForLammps::printAngularPotentialsToFile(std::string const& outputDirName) {
-    error("not implemented yet");
     // create output directory
     const std::string dirName = outputDirName + "_angular_plots";
     if(mkdir(dirName.c_str(), 0777) != 0)
         error("Problem while creating the directory.\n");
 
-    for (int type = 0; type < plotOrientations.size(); ++type) {
+    struct Orientation {
+        std::string name;
+        int theta_1;
+        int theta_2;
+    };
+    std::vector<Orientation> plotOrientations;
+    if (ipcType == IpcType::JANUS) {
+        plotOrientations.push_back({"EE", 0, 180});
+        plotOrientations.push_back({"PP", 180, 0});
+        plotOrientations.push_back({"EP", 0, 0});
+    } else {
+        plotOrientations.push_back({"E",  90, 90});
+        plotOrientations.push_back({"P1", 180, 0});
+        plotOrientations.push_back({"P2", 0, 180});
+    }
+
+    for (auto& type: plotOrientations) {
         // create the output file
-        std::string fileName = dirName + '/' + plotOrientations[type] + ".dat";
+        std::string fileName = dirName + '/' + type.name + ".dat";
         std::ofstream potentialOutputFile(fileName);
         potentialOutputFile << std::scientific << std::setprecision(6);
 
-        double rContact = size_t(1.0/samplingStep);
-        for (double angle = 0; angle < 90.; angle += 1.) {
+        // set up the startingpoints
+        double theta_1 = type.theta_1*M_PI/180.;
+        double starting_theta_2 = type.theta_2;
+
+        for (int angle = 0; angle < 360; angle += 5) {
             // compute potential depending on type and cutoff
-            double printPotential;
-            potentialOutputFile << angle << '\t' << printPotential << '\n';
+            double theta_2 = (starting_theta_2 + angle)*M_PI/180.;
+            double potential = 0;
+            double dx = 0.;
+            double dy = 0.;
+            size_t distTab = 0;
+
+            // CC
+            distTab = dist(1.0, 0.0);
+            if (distTab != 0) {
+                double pot = uHS[distTab] + uBB[distTab];
+                log("CC", distTab, pot);
+                potential += pot;
+            }
+            // Cp1
+            dx = 1.0 - firstPatchEccentricity*cos(theta_2);
+            dy = firstPatchEccentricity*sin(theta_2);
+            distTab = dist(dx, dy);
+            if (distTab != 0) {
+                double pot = uBs1[distTab];
+                log("Cp1", distTab, pot);
+                potential += pot;
+            }
+            // Cp2
+            dx = 1.0 + secndPatchEccentricity*cos(theta_2);
+            dy = -secndPatchEccentricity*sin(theta_2);
+            distTab = dist(dx, dy);
+            if (distTab != 0) {
+                double pot = uBs2[distTab];
+                log("Cp2", distTab, pot);
+                potential += pot;
+            }
+
+            // p1C
+            dx = firstPatchEccentricity*cos(theta_1) + 1.0;
+            dy = firstPatchEccentricity*sin(theta_1);
+            distTab = dist(dx, dy);
+            if (distTab != 0) {
+                double pot = uBs1[distTab];
+                log("p1C", distTab, pot);
+                potential += pot;
+            }
+            // p1p1
+            dx = firstPatchEccentricity*cos(theta_1) + 1.0 - firstPatchEccentricity*cos(theta_2);
+            dy = firstPatchEccentricity*sin(theta_1) - firstPatchEccentricity*sin(theta_2);
+            distTab = dist(dx, dy);
+            if (distTab != 0) {
+                double pot = us1s1[distTab];
+                log("p1p1", distTab, pot);
+                potential += pot;
+            }
+            // p1p2
+            dx = firstPatchEccentricity*cos(theta_1) + 1.0 + secndPatchEccentricity*cos(theta_2);
+            dy = firstPatchEccentricity*sin(theta_1) + secndPatchEccentricity*sin(theta_2);
+            distTab = dist(dx, dy);
+            if (distTab != 0) {
+                double pot = us1s2[distTab];
+                log("p1p2", distTab, pot);
+                potential += pot;
+            }
+
+            // p2C
+            dx = 1.0 - secndPatchEccentricity*cos(theta_1);
+            dy = secndPatchEccentricity*sin(theta_1);
+            distTab = dist(dx, dy);
+            if (distTab != 0) {
+                double pot = uBs2[distTab];
+                log("p2C", distTab, pot);
+                potential += pot;
+            }
+            // p2p1
+            dx = 1.0 - secndPatchEccentricity*cos(theta_1) - firstPatchEccentricity*cos(theta_2);
+            dy = secndPatchEccentricity*sin(theta_1) + firstPatchEccentricity*sin(theta_2);
+            distTab = dist(dx, dy);
+            if (distTab != 0) {
+                double pot = us1s2[distTab];
+                log("p2p1", distTab, pot);
+                potential += pot;
+            }
+            // p2p2
+            dx = 1.0 - secndPatchEccentricity*cos(theta_1) + secndPatchEccentricity*cos(theta_2);
+            dy = secndPatchEccentricity*sin(theta_1) - secndPatchEccentricity*sin(theta_2);
+            distTab = dist(dx, dy);
+            if (distTab != 0) {
+                double pot = us2s2[distTab];
+                log("p2p2", distTab, pot);
+                potential += pot;
+            }
+
+            // finally print it
+            log("total", 0, potential);
+            // std::cout << "\n\n\n";
+            potentialOutputFile << angle << '\t' << potential << '\n';
         }
     }
 }
