@@ -14,17 +14,13 @@ static void error(std::string const& errorMessage) {
   exit(EXIT_FAILURE);
 }
 
-PotentialForLammps::PotentialForLammps(const std::string& inputFileName,
-                                       const IpcType type,
-                                       bool startFromContactValues)
-    : ipcType{type} {
+void PotentialForLammps::initFromEpsilons(std::string const& inputFileName) {
   // read input.in file
   std::ifstream inputFile(inputFileName);
   if (inputFile.fail()) {
     error("Input file could not be opened. Aborting.\n");
   }
   std::string modelName;
-  double delta;
   inputFile >> modelName;
   inputFile >> delta;
   inputFile >> eccentricity_p1;
@@ -33,6 +29,33 @@ PotentialForLammps::PotentialForLammps(const std::string& inputFileName,
   inputFile >> eccentricity_p2;
   inputFile >> e_Bs2 >> e_s2s2 >> e_s1s2;
   inputFile.close();
+}
+
+void PotentialForLammps::readContactValues(std::string const& inputFileName) {
+  // read input.in file
+  std::ifstream inputFile(inputFileName);
+  if (inputFile.fail()) {
+    error("Input file could not be opened. Aborting.\n");
+  }
+  std::string modelName;
+  inputFile >> modelName;
+  inputFile >> delta;
+  inputFile >> eccentricity_p1;
+  inputFile >> vEE >> vEP1 >> vP1P1;
+  inputFile >> eccentricity_p2;
+  inputFile >> vEp2 >> vP1P2 >> vP2P2;
+  inputFile.close();
+}
+
+PotentialForLammps::PotentialForLammps(const std::string& inputFileName,
+                                       const IpcType type,
+                                       bool startFromContactValues)
+    : ipcType{type} {
+  if (startFromContactValues) {
+    readContactValues(inputFileName);
+  } else {
+    initFromEpsilons(inputFileName);
+  }
 
   fakeHSdiameter = 1.0;
   fakeHScoefficient = 500;
@@ -61,7 +84,15 @@ PotentialForLammps::PotentialForLammps(const std::string& inputFileName,
     e_s1s2 = e_s1s1;
   }
 
+  if (startFromContactValues) {
+    computeEpsilonsFromContactValues();
+  }
+
   computeSiteSitePotentials();
+}
+
+void PotentialForLammps::computeEpsilonsFromContactValues() {
+  //
 }
 
 static double computeOmega(double Ra, double Rb, double rab) {
