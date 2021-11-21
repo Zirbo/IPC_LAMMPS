@@ -1,7 +1,9 @@
-#!/bin/bash
+#!/bin/bash -xe
 
 # name of the model you want to create
-model_name=45n
+model_name=janus
+# is janus (0 is true)
+janus=0
 # delta (distance from the Hard Core at which the potential goes to zero)
 delta=0.2
 # patch eccentricity
@@ -14,14 +16,21 @@ vEP=-1.0
 vPP=4.0
 
 
-
+if [ $janus -eq 0 ]; then
+  pyjan="janus"
+  cppjan="-j"
+else
+  pyjan="aaa"
+  cppjan=""
+fi
 
 pushd sources
-  python3 mapContactValuesToCoefficients.py $model_name $delta $ecc $vEE $vEP $vPP
+  python3 mapContactValuesToCoefficients.py $model_name $delta $ecc $vEE $vEP $vPP $pyjan
+  rm compute.out
   if [ ! -f compute.out ]; then
     g++ printPotential.cpp main.cpp -o compute.out
   fi
-  ./compute.out -i inputfile_${model_name}.txt -o ../lammpspot_${model_name}
+  ./compute.out $cppjan -i inputfile_${model_name}.txt -o ../lammpspot_${model_name}
   mv inputfile_${model_name}.txt ..
   mv MC_inputfile_${model_name}.txt ..
 popd 

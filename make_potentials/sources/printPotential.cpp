@@ -21,7 +21,7 @@ PotentialForLammps::PotentialForLammps(
     // read input.in file
     std::ifstream inputFile(inputFileName);
     if(inputFile.fail())
-        error("File input.in could not be opened. Aborting.\n");
+        error("Input file could not be opened. Aborting.\n");
     inputFile >> e_BB >> e_Bs1 >> e_Bs2;
     inputFile >> e_s1s1 >> e_s2s2 >> e_s1s2;
     inputFile >> e_min;

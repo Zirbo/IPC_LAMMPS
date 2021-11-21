@@ -18,6 +18,7 @@ parser.add_argument('ecc', metavar='e', type=float, help='eccentricity')
 parser.add_argument('vEE', metavar='vEE', type=float, help='')
 parser.add_argument('vEP', metavar='vEP', type=float, help='')
 parser.add_argument('cPP', metavar='cPP', type=float, help='')
+parser.add_argument('janus', metavar='janus', type=str, help='')
 args = parser.parse_args()
 
 ecc = args.ecc
@@ -25,6 +26,7 @@ delta = args.delta
 vEE = args.vEE
 vEP = args.vEP
 cPP = args.cPP
+janus = (args.janus == "janus");
 
 HSradius = 0.5
 HSdiameter = 1.0
@@ -61,8 +63,12 @@ if __name__ == "__main__":
   
   # create input file to generate the potentials
   outFile = open("inputfile_" + args.name + ".txt", 'w')
-  outFile.write(str(cBB)[0:7].ljust(10) + str(cBS)[0:8].ljust(10) + str(cBS)[0:8].ljust(10) + "\n")
-  outFile.write(str(cSS)[0:7].ljust(10) + str(cSS)[0:7].ljust(10) + str(cSS)[0:7].ljust(10) + "\n")
+  if janus:
+    outFile.write(str(cBB)[0:7].ljust(10) + str(cBS)[0:8].ljust(10) + str(0)[0:8].ljust(10) + "\n")
+    outFile.write(str(cSS)[0:7].ljust(10) + str(0)[0:7].ljust(10) + str(0)[0:7].ljust(10) + "\n")
+  else:
+    outFile.write(str(cBB)[0:7].ljust(10) + str(cBS)[0:8].ljust(10) + str(cBS)[0:8].ljust(10) + "\n")
+    outFile.write(str(cSS)[0:7].ljust(10) + str(cSS)[0:7].ljust(10) + str(cSS)[0:7].ljust(10) + "\n")
   outFile.write("1.0\n")
   outFile.write(str(ecc)[0:7].ljust(10) + str(patchRadius)[0:7].ljust(10) + "\n")
   outFile.write(str(ecc)[0:7].ljust(10) + str(patchRadius)[0:7].ljust(10) + "\n")
@@ -70,8 +76,12 @@ if __name__ == "__main__":
   outFile.write("1.0e-05   1.0e+06\n")
 
   outFile = open("MC_inputfile_" + args.name + ".txt", 'w')
-  outFile.write(str(eBB)[0:7].ljust(10) + str(eBS)[0:8].ljust(10) + str(eBS)[0:8].ljust(10) + "\n")
-  outFile.write(str(eSS)[0:7].ljust(10) + str(eSS)[0:7].ljust(10) + str(eSS)[0:7].ljust(10) + "\n")
+  if janus:
+    outFile.write(str(cBB)[0:7].ljust(10) + str(cBS)[0:8].ljust(10) + str(0)[0:8].ljust(10) + "\n")
+    outFile.write(str(cSS)[0:7].ljust(10) + str(0)[0:7].ljust(10) + str(0)[0:7].ljust(10) + "\n")
+  else:
+    outFile.write(str(eBB)[0:7].ljust(10) + str(eBS)[0:8].ljust(10) + str(eBS)[0:8].ljust(10) + "\n")
+    outFile.write(str(eSS)[0:7].ljust(10) + str(eSS)[0:7].ljust(10) + str(eSS)[0:7].ljust(10) + "\n")
   outFile.write("1.0\n")
   outFile.write(str(ecc)[0:7].ljust(10) + str(patchRadius)[0:7].ljust(10) + "\n")
 
