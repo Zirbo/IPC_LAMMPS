@@ -356,11 +356,11 @@ void PotentialForLammps::printRadialPotentialsToFile(
       } else if (type == 4) {
         size_t is1s1 = size_t((r - 2 * eccentricity_p1) / samplingStep);
         printPotential =
-            uHS[iBB] + uBB[iBB] + uBs1[iBs1] + uBs2[iBs2] + us1s1[is1s1];
+            uHS[iBB] + uBB[iBB] + uBs1[iBs1] + uBs1[iBs2] + us1s1[is1s1];
       } else if (type == 5) {
         size_t is2s2 = size_t((r - 2 * eccentricity_p2) / samplingStep);
         printPotential =
-            uHS[iBB] + uBB[iBB] + uBs1[iBs1] + uBs2[iBs2] + us2s2[is2s2];
+            uHS[iBB] + uBB[iBB] + uBs2[iBs1] + uBs2[iBs2] + us2s2[is2s2];
       }
       // finally, you can print
       potentialOutputFile << printPotential << '\n';
