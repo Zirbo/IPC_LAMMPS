@@ -43,7 +43,7 @@ void PotentialForLammps::readContactValues(std::string const& inputFileName) {
   inputFile >> eccentricity_p1;
   inputFile >> vEE >> vEP1 >> vP1P1;
   inputFile >> eccentricity_p2;
-  inputFile >> vEp2 >> vP1P2 >> vP2P2;
+  inputFile >> vEP2 >> vP1P2 >> vP2P2;
   inputFile.close();
 }
 
@@ -57,6 +57,7 @@ PotentialForLammps::PotentialForLammps(const std::string& inputFileName,
     initFromEpsilons(inputFileName);
   }
 
+  // define geometry
   fakeHSdiameter = 1.0;
   fakeHScoefficient = 500;
   fakeHSexponent = 15;
@@ -74,6 +75,11 @@ PotentialForLammps::PotentialForLammps(const std::string& inputFileName,
     radius_p2 = ipcRadius - eccentricity_p2;
   }
 
+  // define potential coefficients
+  if (startFromContactValues) {
+    computeEpsilonsFromContactValues();
+  }
+
   if (type == IpcType::JANUS) {
     e_Bs2 = 0;
     e_s2s2 = 0;
@@ -84,15 +90,7 @@ PotentialForLammps::PotentialForLammps(const std::string& inputFileName,
     e_s1s2 = e_s1s1;
   }
 
-  if (startFromContactValues) {
-    computeEpsilonsFromContactValues();
-  }
-
   computeSiteSitePotentials();
-}
-
-void PotentialForLammps::computeEpsilonsFromContactValues() {
-  //
 }
 
 static double computeOmega(double Ra, double Rb, double rab) {
@@ -107,6 +105,40 @@ static double computeOmega(double Ra, double Rb, double rab) {
            ((2. * Ra + tempSum + rab / 2.) * pow(Ra - tempSum - rab / 2., 2) +
             (2. * Rb - tempSum + rab / 2.) * pow(Rb + tempSum - rab / 2., 2));
   }
+}
+
+void PotentialForLammps::computeEpsilonsFromContactValues() {
+  // x_Bs2, x_s1s2 and x_s2s2 values are redundant for symmetric particles
+  // overlap volumes at contact
+  double fBB = computeOmega(ipcRadius, ipcRadius, 1.0);
+  double fBs1 = computeOmega(ipcRadius, radius_p1, 1.0 - eccentricity_p1);
+  double fBs2 = computeOmega(ipcRadius, radius_p2, 1.0 - eccentricity_p2);
+  double fs1s1 = computeOmega(radius_p1, radius_p1, 1.0 - 2. * eccentricity_p1);
+  double fs1s2 = computeOmega(radius_p1, radius_p2,
+                              1.0 - eccentricity_p1 - eccentricity_p2);
+  double fs2s2 = computeOmega(radius_p2, radius_p2, 1.0 - 2. * eccentricity_p2);
+
+  std::cout << "f  bb: " << fBB << " bs: " << fBs1 << " s1s1: " << fs1s1 << '\n';
+  // compute coefficients
+  e_BB = vEE;
+  e_Bs1 = vEP1 - e_BB;
+  e_Bs2 = vEP2 - e_BB;
+  e_s1s1 = (vP1P1 - e_BB - 2. * e_Bs1);
+  e_s1s2 = (vP1P2 - e_BB - e_Bs1 - e_Bs2);
+  e_s2s2 = (vP2P2 - e_BB - 2. * e_Bs2);
+
+  std::cout << "e  bb: " << e_BB << " bs: " << e_Bs1 << " s1s1: " << e_s1s1 << '\n';
+
+  e_BB /= fBB;
+  e_Bs1 /= fBs1;
+  e_Bs2 /= fBs2;
+  e_s1s1 /= fs1s1;
+  e_s1s2 /= fs1s2;
+  e_s2s2 /= fs2s2;
+
+  std::cout << "e/f bb: " << e_BB << " bs: " << e_Bs1 << " s1s1: " << e_s1s1 << '\n';
+
+  e_min = 1.0;
 }
 
 static double computeOmegaRadialDerivative(double Ra, double Rb, double rab) {

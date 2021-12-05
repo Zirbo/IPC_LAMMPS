@@ -22,7 +22,7 @@ class PotentialForLammps {
  private:
   IpcType ipcType;
   double e_BB, e_Bs1, e_Bs2, e_s1s1, e_s1s2, e_s2s2, e_min;
-  double vEE, vEP1, vEp2, vP1P1, vP1P2, vP2P2;
+  double vEE, vEP1, vEP2, vP1P1, vP1P2, vP2P2;
 
   double delta, ipcRadius, interactionRange;
   double eccentricity_p1, radius_p1;
