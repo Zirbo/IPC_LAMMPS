@@ -55,8 +55,20 @@ void PotentialForLammps::readContactValues(std::string const& inputFileName) {
   inputFile >> delta;
   inputFile >> eccentricity_p1;
   inputFile >> vEE >> vEP1 >> vP1P1;
-  inputFile >> eccentricity_p2;
-  inputFile >> vEP2 >> vP1P2 >> vP2P2;
+  if (ipcType == IpcType::ASYM_IPC) {
+    inputFile >> eccentricity_p2;
+    inputFile >> vEP2 >> vP1P2 >> vP2P2;
+  } else if (ipcType == IpcType::JANUS) {
+    eccentricity_p2 = 0;
+    vEP2 = 0;
+    vP1P2 = 0;
+    vP2P2 = 0;
+  } else if (ipcType == IpcType::IPC) {
+    eccentricity_p2 = eccentricity_p1;
+    vEP2 = vEP1;
+    vP1P2 = vP1P1;
+    vP2P2 = vP1P1;
+  }
   inputFile.close();
 }
 
@@ -71,14 +83,14 @@ PotentialForLammps::PotentialForLammps(const std::string& inputFileName,
   }
 
   // define geometry
-  fakeHSdiameter = 1.0;
+  HSdiameter = 1.0;
   fakeHScoefficient = 500;
   fakeHSexponent = 15;
   samplingStep = 1.0e-05;
   cutoffValue = 1.0e+06;
 
-  ipcRadius = 0.5 * (1.0 + delta);
-  interactionRange = 2 * ipcRadius;
+  interactionRange = HSdiameter + delta;
+  ipcRadius = 0.5 * interactionRange;
 
   radius_p1 = ipcRadius - eccentricity_p1;
   if (type == IpcType::JANUS) {
@@ -92,7 +104,6 @@ PotentialForLammps::PotentialForLammps(const std::string& inputFileName,
   // define potential coefficients
   if (startFromContactValues) {
     computeEpsilonsFromContactValues();
-  } else {
   }
 
   std::cout << "COEFFICIENTS:"
@@ -119,30 +130,54 @@ static double computeOmega(double Ra, double Rb, double rab) {
 }
 
 void PotentialForLammps::computeEpsilonsFromContactValues() {
-  // x_Bs2, x_s1s2 and x_s2s2 values are redundant for symmetric particles
-  // overlap volumes at contact
-  double fBB = computeOmega(ipcRadius, ipcRadius, 1.0);
-  double fBs1 = computeOmega(ipcRadius, radius_p1, 1.0 - eccentricity_p1);
-  double fBs2 = computeOmega(ipcRadius, radius_p2, 1.0 - eccentricity_p2);
-  double fs1s1 = computeOmega(radius_p1, radius_p1, 1.0 - 2. * eccentricity_p1);
-  double fs1s2 = computeOmega(radius_p1, radius_p2,
-                              1.0 - eccentricity_p1 - eccentricity_p2);
-  double fs2s2 = computeOmega(radius_p2, radius_p2, 1.0 - 2. * eccentricity_p2);
-
   // compute coefficients
   e_BB = vEE;
   e_Bs1 = vEP1 - e_BB;
-  e_Bs2 = vEP2 - e_BB;
   e_s1s1 = (vP1P1 - e_BB - 2. * e_Bs1);
-  e_s1s2 = (vP1P2 - e_BB - e_Bs1 - e_Bs2);
-  e_s2s2 = (vP2P2 - e_BB - 2. * e_Bs2);
+
+  if (ipcType == IpcType::JANUS) {
+    e_Bs2 = 0;
+    e_s2s2 = 0;
+    e_s1s2 = 0;
+  } else if (ipcType == IpcType::IPC) {
+    e_Bs2 = e_Bs1;
+    e_s1s2 = e_s1s1;
+    e_s2s2 = e_s1s1;
+  } else {
+    e_Bs2 = vEP2 - e_BB;
+    e_s1s2 = (vP1P2 - e_BB - e_Bs1 - e_Bs2);
+    e_s2s2 = (vP2P2 - e_BB - 2. * e_Bs2);
+  }
+
+  // normalize using overlap volumes at contact
+  double fBB = computeOmega(ipcRadius, ipcRadius, HSdiameter);
+  double fBs1 =
+      computeOmega(ipcRadius, radius_p1, HSdiameter - eccentricity_p1);
+  double fs1s1 =
+      computeOmega(radius_p1, radius_p1, HSdiameter - 2. * eccentricity_p1);
+
+  // std::cout << "COEFFICIENTS:"
+  //           << "\nBB = " << e_BB << " f BB = " << fBB
+  //           << "\nBs = " << e_Bs1 << " f Bs = " << fBs1
+  //           << "\nss = " << e_s1s1 << " f ss = " << fs1s1
+  //           << '\n';
 
   e_BB /= fBB;
   e_Bs1 /= fBs1;
-  e_Bs2 /= fBs2;
   e_s1s1 /= fs1s1;
-  e_s1s2 /= fs1s2;
-  e_s2s2 /= fs2s2;
+
+  if (ipcType != IpcType::JANUS) {
+    double fBs2 =
+        computeOmega(ipcRadius, radius_p2, HSdiameter - eccentricity_p2);
+    double fs1s2 = computeOmega(radius_p1, radius_p2,
+                                HSdiameter - eccentricity_p1 - eccentricity_p2);
+    double fs2s2 =
+        computeOmega(radius_p2, radius_p2, HSdiameter - 2. * eccentricity_p2);
+
+    e_Bs2 /= fBs2;
+    e_s1s2 /= fs1s2;
+    e_s2s2 /= fs2s2;
+  }
 
   e_min = 1.0;
 }
@@ -202,7 +237,7 @@ void PotentialForLammps::computeSiteSitePotentials() {
     fs1s1[i] = (e_s1s1 / e_min) *
                computeOmegaRadialDerivative(radius_p1, radius_p1, r);
 
-    if (r <= fakeHSdiameter) {
+    if (r <= HSdiameter) {
       // setting up a Fake Hard Sphere Core
       double rm = pow(r, -fakeHSexponent);
       uHS[i] += fakeHScoefficient * ((rm - 2.) * rm + 1.);
@@ -305,7 +340,7 @@ void PotentialForLammps::printRadialPotentialsToFile(
     std::ofstream potentialOutputFile(fileName);
     potentialOutputFile << std::scientific << std::setprecision(6);
 
-    for (double r = 1.0; r < interactionRange; r += samplingStep) {
+    for (double r = HSdiameter; r < interactionRange; r += samplingStep) {
       potentialOutputFile << r << '\t';
 
       size_t iBB = size_t(r / samplingStep);
@@ -398,14 +433,14 @@ void PotentialForLammps::printAngularPotentialsToFile(
       size_t distTab = 0;
 
       // CC
-      distTab = dist(1.0, 0.0);
+      distTab = dist(HSdiameter, 0.0);
       if (distTab != 0) {
         double pot = uHS[distTab] + uBB[distTab];
         log("CC", distTab, pot);
         potential += pot;
       }
       // Cp1
-      dx = 1.0 - eccentricity_p1 * cos(theta_2);
+      dx = HSdiameter - eccentricity_p1 * cos(theta_2);
       dy = eccentricity_p1 * sin(theta_2);
       distTab = dist(dx, dy);
       if (distTab != 0) {
@@ -414,7 +449,7 @@ void PotentialForLammps::printAngularPotentialsToFile(
         potential += pot;
       }
       // Cp2
-      dx = 1.0 + eccentricity_p2 * cos(theta_2);
+      dx = HSdiameter + eccentricity_p2 * cos(theta_2);
       dy = -eccentricity_p2 * sin(theta_2);
       distTab = dist(dx, dy);
       if (distTab != 0) {
@@ -424,7 +459,7 @@ void PotentialForLammps::printAngularPotentialsToFile(
       }
 
       // p1C
-      dx = eccentricity_p1 * cos(theta_1) + 1.0;
+      dx = eccentricity_p1 * cos(theta_1) + HSdiameter;
       dy = eccentricity_p1 * sin(theta_1);
       distTab = dist(dx, dy);
       if (distTab != 0) {
@@ -433,8 +468,8 @@ void PotentialForLammps::printAngularPotentialsToFile(
         potential += pot;
       }
       // p1p1
-      dx =
-          eccentricity_p1 * cos(theta_1) + 1.0 - eccentricity_p1 * cos(theta_2);
+      dx = eccentricity_p1 * cos(theta_1) + HSdiameter -
+           eccentricity_p1 * cos(theta_2);
       dy = eccentricity_p1 * sin(theta_1) - eccentricity_p1 * sin(theta_2);
       distTab = dist(dx, dy);
       if (distTab != 0) {
@@ -443,8 +478,8 @@ void PotentialForLammps::printAngularPotentialsToFile(
         potential += pot;
       }
       // p1p2
-      dx =
-          eccentricity_p1 * cos(theta_1) + 1.0 + eccentricity_p2 * cos(theta_2);
+      dx = eccentricity_p1 * cos(theta_1) + HSdiameter +
+           eccentricity_p2 * cos(theta_2);
       dy = eccentricity_p1 * sin(theta_1) + eccentricity_p2 * sin(theta_2);
       distTab = dist(dx, dy);
       if (distTab != 0) {
@@ -454,7 +489,7 @@ void PotentialForLammps::printAngularPotentialsToFile(
       }
 
       // p2C
-      dx = 1.0 - eccentricity_p2 * cos(theta_1);
+      dx = HSdiameter - eccentricity_p2 * cos(theta_1);
       dy = eccentricity_p2 * sin(theta_1);
       distTab = dist(dx, dy);
       if (distTab != 0) {
@@ -463,8 +498,8 @@ void PotentialForLammps::printAngularPotentialsToFile(
         potential += pot;
       }
       // p2p1
-      dx =
-          1.0 - eccentricity_p2 * cos(theta_1) - eccentricity_p1 * cos(theta_2);
+      dx = HSdiameter - eccentricity_p2 * cos(theta_1) -
+           eccentricity_p1 * cos(theta_2);
       dy = eccentricity_p2 * sin(theta_1) + eccentricity_p1 * sin(theta_2);
       distTab = dist(dx, dy);
       if (distTab != 0) {
@@ -473,8 +508,8 @@ void PotentialForLammps::printAngularPotentialsToFile(
         potential += pot;
       }
       // p2p2
-      dx =
-          1.0 - eccentricity_p2 * cos(theta_1) + eccentricity_p2 * cos(theta_2);
+      dx = HSdiameter - eccentricity_p2 * cos(theta_1) +
+           eccentricity_p2 * cos(theta_2);
       dy = eccentricity_p2 * sin(theta_1) - eccentricity_p2 * sin(theta_2);
       distTab = dist(dx, dy);
       if (distTab != 0) {

@@ -27,7 +27,7 @@ class PotentialForLammps {
   double delta, ipcRadius, interactionRange;
   double eccentricity_p1, radius_p1;
   double eccentricity_p2, radius_p2;
-  double fakeHSdiameter, fakeHScoefficient, fakeHSexponent;
+  double HSdiameter, fakeHScoefficient, fakeHSexponent;
 
   double samplingStep, cutoffValue;
 
