@@ -7,7 +7,8 @@
 # name of the model you want to create (it is only for you)
 model_name="45n"
 # type of the model: can be janus, IPC (symmetric), or aIPC (asymmetric)
-model="ipc"  # janus    -> janus
+model="ipc"
+               # janus    -> janus
                # ipc      -> symmetric IPC
                # asym_ipc -> asymmetric IPC
 # delta (distance from the Hard Core at which the potential goes to zero)
@@ -52,6 +53,6 @@ pushd sources
   mkdir -p ../target
   rm -rf ../target/lammpspot_${model_name}*
 
-  ./compute.out -e -m $model -i inputfile -o ../target/lammpspot_${model_name}
+  ./compute.out -c -m $model -i inputfile -o ../target/lammpspot_${model_name}
   mv inputfile ../target/inputfile_${model_name}_contact.dat
 popd 

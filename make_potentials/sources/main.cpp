@@ -7,10 +7,13 @@
 
 static void usage() {
   std::cerr << "Usage:\n"
-            << "\t-e start from contact values\n"
+            << "\t-c start from contact values\n"
+            << "\t-e start from epsilons\n"
             << "\t-m model (janus, ipc, asym-ipc)\n"
             << "\t-i inputfile\n"
-            << "\t-o output dir\n";
+            << "\t-o output dir\n"
+			<< "All parameters are required,\n"
+			<< "except for -c and -e which are mutually exclusive.";
   exit(EXIT_FAILURE);
 }
 
@@ -19,12 +22,16 @@ int main(int argc, char* argv[]) {
   std::string inputFileName;
   std::string outputDirName;
   bool startFromContactValues = false;
+  bool startFromEpsilons = false;
 
   int opt = 0;
-  while ((opt = getopt(argc, argv, "em:i:o:")) != -1) {
+  while ((opt = getopt(argc, argv, "cem:i:o:")) != -1) {
     switch (opt) {
-      case 'e':
+      case 'c':
         startFromContactValues = true;
+        break;
+      case 'e':
+        startFromEpsilons = true;
         break;
       case 'm':
         if (strcmp(optarg, "janus") == 0) {
@@ -47,6 +54,11 @@ int main(int argc, char* argv[]) {
   }
 
   if (inputFileName.empty() || outputDirName.empty() || type == IpcType::NONE) {
+    // these parameters are mandatory
+    usage();
+  }
+  if (startFromContactValues == startFromEpsilons) {
+    // either both or none given
     usage();
   }
 
