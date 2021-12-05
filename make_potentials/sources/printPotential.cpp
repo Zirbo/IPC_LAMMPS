@@ -26,8 +26,21 @@ void PotentialForLammps::initFromEpsilons(std::string const& inputFileName) {
   inputFile >> eccentricity_p1;
   inputFile >> e_BB >> e_Bs1 >> e_s1s1;
   inputFile >> e_min;
-  inputFile >> eccentricity_p2;
-  inputFile >> e_Bs2 >> e_s2s2 >> e_s1s2;
+  if (ipcType == IpcType::ASYM_IPC) {
+    inputFile >> eccentricity_p2;
+    inputFile >> e_Bs2 >> e_s1s2 >> e_s2s2;
+  } else if (ipcType == IpcType::JANUS) {
+    eccentricity_p2 = 0;
+    e_Bs2 = 0;
+    e_s2s2 = 0;
+    e_s1s2 = 0;
+  } else if (ipcType == IpcType::IPC) {
+    eccentricity_p2 = eccentricity_p1;
+    e_Bs2 = e_Bs1;
+    e_s2s2 = e_s1s1;
+    e_s1s2 = e_s1s1;
+  }
+
   inputFile.close();
 }
 
@@ -68,27 +81,25 @@ PotentialForLammps::PotentialForLammps(const std::string& inputFileName,
   interactionRange = 2 * ipcRadius;
 
   radius_p1 = ipcRadius - eccentricity_p1;
-  if (type != IpcType::ASYM_IPC) {
-    eccentricity_p2 = eccentricity_p1;
+  if (type == IpcType::JANUS) {
+    radius_p2 = 0;
+  } else if (type == IpcType::IPC) {
     radius_p2 = radius_p1;
-  } else {
+  } else if (type == IpcType::ASYM_IPC) {
     radius_p2 = ipcRadius - eccentricity_p2;
   }
 
   // define potential coefficients
   if (startFromContactValues) {
     computeEpsilonsFromContactValues();
+  } else {
   }
 
-  if (type == IpcType::JANUS) {
-    e_Bs2 = 0;
-    e_s2s2 = 0;
-    e_s1s2 = 0;
-  } else if (type == IpcType::IPC) {
-    e_Bs2 = e_Bs1;
-    e_s2s2 = e_s1s1;
-    e_s1s2 = e_s1s1;
-  }
+  std::cout << "COEFFICIENTS:"
+            << "\nBB = " << e_BB / e_min << "\nBs1 = " << e_Bs1 / e_min
+            << "\nBs2 = " << e_Bs2 / e_min << "\ns1s1 = " << e_s1s1 / e_min
+            << "\ns1s2 = " << e_s1s2 / e_min << "\ns2s2 = " << e_s2s2 / e_min
+            << '\n';
 
   computeSiteSitePotentials();
 }
@@ -340,7 +351,9 @@ size_t PotentialForLammps::dist(double x, double y) {
 }
 
 static void log(std::string orient, size_t dist, double pot) {
-  // std::cout << orient << " dist: " << dist*1e-5 << ", pot: " << pot << "\n";
+#ifdef DEBUG
+  std::cout << orient << " dist: " << dist * 1e-5 << ", pot: " << pot << "\n";
+#endif
 }
 
 void PotentialForLammps::printAngularPotentialsToFile(

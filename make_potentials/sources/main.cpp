@@ -12,8 +12,8 @@ static void usage() {
             << "\t-m model (janus, ipc, asym-ipc)\n"
             << "\t-i inputfile\n"
             << "\t-o output dir\n"
-			<< "All parameters are required,\n"
-			<< "except for -c and -e which are mutually exclusive.";
+            << "All parameters are required,\n"
+            << "except for -c and -e which are mutually exclusive.";
   exit(EXIT_FAILURE);
 }
 

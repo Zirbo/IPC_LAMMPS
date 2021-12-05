@@ -10,7 +10,7 @@ model_name="45n"
 model="ipc"
                # janus    -> janus
                # ipc      -> symmetric IPC
-               # asym_ipc -> asymmetric IPC
+               # asym-ipc -> asymmetric IPC
 # delta (distance from the Hard Core at which the potential goes to zero)
 delta=0.2
 # patch eccentricity
