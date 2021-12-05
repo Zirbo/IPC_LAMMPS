@@ -118,7 +118,6 @@ void PotentialForLammps::computeEpsilonsFromContactValues() {
                               1.0 - eccentricity_p1 - eccentricity_p2);
   double fs2s2 = computeOmega(radius_p2, radius_p2, 1.0 - 2. * eccentricity_p2);
 
-  std::cout << "f  bb: " << fBB << " bs: " << fBs1 << " s1s1: " << fs1s1 << '\n';
   // compute coefficients
   e_BB = vEE;
   e_Bs1 = vEP1 - e_BB;
@@ -127,16 +126,12 @@ void PotentialForLammps::computeEpsilonsFromContactValues() {
   e_s1s2 = (vP1P2 - e_BB - e_Bs1 - e_Bs2);
   e_s2s2 = (vP2P2 - e_BB - 2. * e_Bs2);
 
-  std::cout << "e  bb: " << e_BB << " bs: " << e_Bs1 << " s1s1: " << e_s1s1 << '\n';
-
   e_BB /= fBB;
   e_Bs1 /= fBs1;
   e_Bs2 /= fBs2;
   e_s1s1 /= fs1s1;
   e_s1s2 /= fs1s2;
   e_s2s2 /= fs2s2;
-
-  std::cout << "e/f bb: " << e_BB << " bs: " << e_Bs1 << " s1s1: " << e_s1s1 << '\n';
 
   e_min = 1.0;
 }
