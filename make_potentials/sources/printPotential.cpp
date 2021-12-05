@@ -313,12 +313,13 @@ void PotentialForLammps::printRadialPotentialsToFile(
 
   std::vector<std::string> plotOrientations;
   if (ipcType == IpcType::JANUS) {
-    plotOrientations.push_back("JANUS_SS");
-    plotOrientations.push_back("JANUS_SP");
-    plotOrientations.push_back("JANUS_SE");
-    plotOrientations.push_back("JANUS_EP");
-    plotOrientations.push_back("JANUS_PP");
-    plotOrientations.push_back("JANUS_EE");
+    // E->quator, p->atch, C->backside with no patch
+    plotOrientations.push_back("EE");
+    plotOrientations.push_back("EP");
+    plotOrientations.push_back("EC");
+    plotOrientations.push_back("PC");
+    plotOrientations.push_back("PP");
+    plotOrientations.push_back("CC");
   } else {
     plotOrientations.push_back("EE");
     plotOrientations.push_back("Ep1");
