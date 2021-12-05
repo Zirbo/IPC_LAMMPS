@@ -30,12 +30,10 @@ void PotentialForLammps::initFromEpsilons(std::string const& inputFileName) {
     inputFile >> eccentricity_p2;
     inputFile >> e_Bs2 >> e_s1s2 >> e_s2s2;
   } else if (ipcType == IpcType::JANUS) {
-    eccentricity_p2 = 0;
     e_Bs2 = 0;
     e_s2s2 = 0;
     e_s1s2 = 0;
   } else if (ipcType == IpcType::IPC) {
-    eccentricity_p2 = eccentricity_p1;
     e_Bs2 = e_Bs1;
     e_s2s2 = e_s1s1;
     e_s1s2 = e_s1s1;
@@ -58,16 +56,10 @@ void PotentialForLammps::readContactValues(std::string const& inputFileName) {
   if (ipcType == IpcType::ASYM_IPC) {
     inputFile >> eccentricity_p2;
     inputFile >> vEP2 >> vP1P2 >> vP2P2;
-  } else if (ipcType == IpcType::JANUS) {
-    eccentricity_p2 = 0;
+  } else {
     vEP2 = 0;
     vP1P2 = 0;
     vP2P2 = 0;
-  } else if (ipcType == IpcType::IPC) {
-    eccentricity_p2 = eccentricity_p1;
-    vEP2 = vEP1;
-    vP1P2 = vP1P1;
-    vP2P2 = vP1P1;
   }
   inputFile.close();
 }
@@ -94,8 +86,10 @@ PotentialForLammps::PotentialForLammps(const std::string& inputFileName,
 
   radius_p1 = ipcRadius - eccentricity_p1;
   if (type == IpcType::JANUS) {
-    radius_p2 = 0;
+    eccentricity_p2 = eccentricity_p1;
+    radius_p2 = radius_p1;
   } else if (type == IpcType::IPC) {
+    eccentricity_p2 = eccentricity_p1;
     radius_p2 = radius_p1;
   } else if (type == IpcType::ASYM_IPC) {
     radius_p2 = ipcRadius - eccentricity_p2;
@@ -135,15 +129,7 @@ void PotentialForLammps::computeEpsilonsFromContactValues() {
   e_Bs1 = vEP1 - e_BB;
   e_s1s1 = (vP1P1 - e_BB - 2. * e_Bs1);
 
-  if (ipcType == IpcType::JANUS) {
-    e_Bs2 = 0;
-    e_s2s2 = 0;
-    e_s1s2 = 0;
-  } else if (ipcType == IpcType::IPC) {
-    e_Bs2 = e_Bs1;
-    e_s1s2 = e_s1s1;
-    e_s2s2 = e_s1s1;
-  } else {
+  if (ipcType == IpcType::ASYM_IPC) {
     e_Bs2 = vEP2 - e_BB;
     e_s1s2 = (vP1P2 - e_BB - e_Bs1 - e_Bs2);
     e_s2s2 = (vP2P2 - e_BB - 2. * e_Bs2);
@@ -166,7 +152,15 @@ void PotentialForLammps::computeEpsilonsFromContactValues() {
   e_Bs1 /= fBs1;
   e_s1s1 /= fs1s1;
 
-  if (ipcType != IpcType::JANUS) {
+  if (ipcType == IpcType::JANUS) {
+    e_Bs2 = 0;
+    e_s2s2 = 0;
+    e_s1s2 = 0;
+  } else if (ipcType == IpcType::IPC) {
+    e_Bs2 = e_Bs1;
+    e_s1s2 = e_s1s1;
+    e_s2s2 = e_s1s1;
+  } else if (ipcType == IpcType::ASYM_IPC) {
     double fBs2 =
         computeOmega(ipcRadius, radius_p2, HSdiameter - eccentricity_p2);
     double fs1s2 = computeOmega(radius_p1, radius_p2,
