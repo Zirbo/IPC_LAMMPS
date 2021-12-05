@@ -53,4 +53,5 @@ pushd sources
   rm -rf ../target/lammpspot_${model_name}*
 
   ./compute.out -e -m $model -i inputfile -o ../target/lammpspot_${model_name}
+  mv inputfile ../target/inputfile_${model_name}_contact.dat
 popd 

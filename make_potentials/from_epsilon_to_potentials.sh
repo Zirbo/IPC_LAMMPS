@@ -56,4 +56,5 @@ pushd sources
   rm -rf ../target/lammpspot_${model_name}*
 
   ./compute.out -m $model -i inputfile -o ../target/lammpspot_${model_name}
+  mv inputfile ../target/inputfile_${model_name}_epsilon.dat
 popd 
