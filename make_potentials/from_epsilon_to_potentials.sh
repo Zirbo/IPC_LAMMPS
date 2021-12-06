@@ -7,10 +7,9 @@
 # name of the model you want to create (it is only for you)
 model_name="45n"
 # type of the model: can be janus, IPC (symmetric), or aIPC (asymmetric)
-ipc_type="janus"
-               # janus    -> janus
-               # ipc      -> symmetric IPC
-               # asym-ipc -> asymmetric IPC
+ipc_type="a-ipc"     # j-ipc -> janus
+                     # s-ipc -> symmetric IPC
+                     # a-ipc -> asymmetric IPC
 # delta (distance from the Hard Core at which the potential goes to zero)
 delta=0.2
 # patch eccentricity
