@@ -7,7 +7,7 @@
 # name of the model you want to create (it is only for you)
 model_name="45n"
 # type of the model: can be janus, IPC (symmetric), or aIPC (asymmetric)
-model="ipc"
+ipc_type="janus"
                # janus    -> janus
                # ipc      -> symmetric IPC
                # asym-ipc -> asymmetric IPC
@@ -33,8 +33,6 @@ epsP2P2=21.2298
 
 
 
-
-
 # what follows is the implementation. you don't need to change it :)
 
 
@@ -51,11 +49,12 @@ pushd sources
   echo $epsEP2 >> inputfile
   echo $epsP1P2 >> inputfile
   echo $epsP2P2 >> inputfile
-  g++ printPotential.cpp main.cpp -o compute.out
+  g++ -std=c++11 printPotential.cpp main.cpp -o compute.out
 
-  mkdir -p ../target
-  rm -rf ../target/lammpspot_${model_name}*
+  target="../target_${model_name}_${ipc_type}_epsilons"
+  [ -d $target ] && rm -rf $target
+  mkdir -p $target
 
-  ./compute.out -e -m $model -i inputfile -o ../target/lammpspot_${model_name}
-  mv inputfile ../target/inputfile_${model_name}_epsilon.dat
+  ./compute.out -e -m $ipc_type -i inputfile -o ${target}
+  mv inputfile ${target}/inputfile.dat
 popd 

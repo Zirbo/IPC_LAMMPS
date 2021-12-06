@@ -7,7 +7,7 @@
 # name of the model you want to create (it is only for you)
 model_name="45n"
 # type of the model: can be janus, IPC (symmetric), or aIPC (asymmetric)
-model="ipc"
+ipc_type="janus"
                # janus    -> janus
                # ipc      -> symmetric IPC
                # asym-ipc -> asymmetric IPC
@@ -15,7 +15,7 @@ model="ipc"
 delta=0.2
 # patch eccentricity
 ecc1=0.22
-# epsilons
+# contact values
 vEE=0.1
 vEP1=-1.0
 vP1P1=4.0
@@ -44,15 +44,17 @@ pushd sources
   echo $vEE >> inputfile
   echo $vEP1 >> inputfile
   echo $vP1P1 >> inputfile
+
   echo $ecc2 >> inputfile
   echo $vEP2 >> inputfile
   echo $vP1P2 >> inputfile
   echo $vP2P2 >> inputfile
-  g++ printPotential.cpp main.cpp -o compute.out
+  g++ -std=c++11 printPotential.cpp main.cpp -o compute.out
 
-  mkdir -p ../target
-  rm -rf ../target/lammpspot_${model_name}*
+  target="../target_${model_name}_${ipc_type}_contact"
+  [ -d $target ] && rm -rf $target
+  mkdir -p $target
 
-  ./compute.out -c -m $model -i inputfile -o ../target/lammpspot_${model_name}
-  mv inputfile ../target/inputfile_${model_name}_contact.dat
+  ./compute.out -c -m $ipc_type -i inputfile -o ${target}
+  mv inputfile ${target}/inputfile.dat
 popd 

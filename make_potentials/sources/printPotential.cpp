@@ -243,8 +243,8 @@ void PotentialForLammps::computeSiteSitePotentials() {
 void PotentialForLammps::printLAMMPSpotentialsToFile(
     const std::string& outputDirName) {
   // create output directory
-  const std::string makedir = "mkdir -p " + outputDirName;
-  if (system(makedir.c_str()) != 0)
+  const std::string dirName = outputDirName + "/lammpspot";
+  if (mkdir(dirName.c_str(), 0777) != 0)
     error("Problem while creating the directory.\n");
 
   // prepare strings for defining file names
@@ -260,8 +260,7 @@ void PotentialForLammps::printLAMMPSpotentialsToFile(
 
   for (int type = 0; type < 6; ++type) {
     // create the output file
-    std::string fileName =
-        outputDirName + "/" + interactionType[type] + ".table";
+    std::string fileName = dirName + "/" + interactionType[type] + ".table";
     std::ofstream potentialOutputFile(fileName);
     potentialOutputFile << "# potentials for lammps\n\n"
                         << interactionType[type] << "\nN " << potentialSteps - 1
@@ -307,7 +306,7 @@ void PotentialForLammps::printLAMMPSpotentialsToFile(
 void PotentialForLammps::printRadialPotentialsToFile(
     std::string const& outputDirName) {
   // create output directory
-  const std::string dirName = outputDirName + "_radial_plots";
+  const std::string dirName = outputDirName + "/lammpspot_radial_plots";
   if (mkdir(dirName.c_str(), 0777) != 0)
     error("Problem while creating the directory for radial potentials.\n");
 
@@ -389,7 +388,7 @@ static void log(std::string orient, size_t dist, double pot) {
 void PotentialForLammps::printAngularPotentialsToFile(
     std::string const& outputDirName) {
   // create output directory
-  const std::string dirName = outputDirName + "_angular_plots";
+  const std::string dirName = outputDirName + "/lammpspot_angular_plots";
   if (mkdir(dirName.c_str(), 0777) != 0)
     error("Problem while creating the directory.\n");
 
