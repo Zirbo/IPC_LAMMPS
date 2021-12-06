@@ -401,13 +401,13 @@ void PotentialForLammps::printAngularPotentialsToFile(
   };
   std::vector<Orientation> plotOrientations;
   if (ipcType == IpcType::JANUS) {
-    plotOrientations.push_back({"EE", 0, 180});
+    plotOrientations.push_back({"CC", 0, 180});
     plotOrientations.push_back({"PP", 180, 0});
-    plotOrientations.push_back({"EP", 0, 0});
+    plotOrientations.push_back({"PC", 0, 0});
   } else {
-    plotOrientations.push_back({"E", 90, 90});
-    plotOrientations.push_back({"P1", 180, 0});
-    plotOrientations.push_back({"P2", 0, 180});
+    plotOrientations.push_back({"EE", 90, 90});
+    plotOrientations.push_back({"P1P1", 180, 0});
+    plotOrientations.push_back({"P2P2", 0, 180});
   }
 
   for (auto& type : plotOrientations) {
