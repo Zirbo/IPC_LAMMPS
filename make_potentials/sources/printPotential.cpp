@@ -100,11 +100,13 @@ PotentialForLammps::PotentialForLammps(const std::string& inputFileName,
     computeEpsilonsFromContactValues();
   }
 
-  std::cout << "COEFFICIENTS:"
-            << "\nBB = " << e_BB / e_min << "\nBs1 = " << e_Bs1 / e_min
-            << "\nBs2 = " << e_Bs2 / e_min << "\ns1s1 = " << e_s1s1 / e_min
-            << "\ns1s2 = " << e_s1s2 / e_min << "\ns2s2 = " << e_s2s2 / e_min
-            << '\n';
+  std::cout << "NORMALIZED COEFFICIENTS:"
+            << "\neps_BB   = " << e_BB / e_min
+            << "\neps_Bs1  = " << e_Bs1 / e_min
+            << "\neps_Bs2  = " << e_Bs2 / e_min
+            << "\neps_s1s1 = " << e_s1s1 / e_min
+            << "\npes_s1s2 = " << e_s1s2 / e_min
+            << "\neps_s2s2 = " << e_s2s2 / e_min << '\n';
 
   computeSiteSitePotentials();
 }
