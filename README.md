@@ -11,8 +11,13 @@ For any help, feel free to contact us :)</p>
 <ol>
   <li> make_potentials <br>
     contains programs that compute the potentials in LAMMPS format. <br>
-    Two scripts are given:<br>
+    Three scripts are given:<br>
     <ul>
+       <li>
+       compute_geometry.py <br>
+       computes eccentricity and patch radius from patch amplitude and
+       interaction range, or viceversa. check the inline manual with -h
+       </li>
        <li>
        from_epsilon_to_potentials.sh <br>
        requires as input (modify the file to supply the inputs!)
