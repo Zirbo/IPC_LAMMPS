@@ -4,27 +4,37 @@
 #include <string>
 #include <vector>
 
-enum class IpcType {
+enum class Symmetry
+{
   NONE,
   JANUS,
-  IPC,
-  ASYM_IPC,
+  SYMMETRIC,
+  ASYMMETRIC,
 };
 
-class PotentialForLammps {
- public:
-  PotentialForLammps(std::string const &inputFileName, const IpcType ipcType,
-                     bool startFromContactValues);
-  void printLAMMPSpotentialsToFile(std::string const &outputDirName);
-  void printRadialPotentialsToFile(std::string const &outputDirName);
-  void printAngularPotentialsToFile(std::string const &outputDirName);
+enum class Colloid
+{
+  OSPC,
+  IPC,
+};
 
- private:
-  IpcType ipcType;
+class PotentialForLammps
+{
+public:
+  PotentialForLammps(std::string const& inputFileName,
+                     const Symmetry simmetry,
+                     const Colloid colloid,
+                     bool startFromContactValues);
+  void printLAMMPSpotentialsToFile(std::string const& outputDirName);
+  void printRadialPotentialsToFile(std::string const& outputDirName);
+  void printAngularPotentialsToFile(std::string const& outputDirName);
+
+private:
+  Symmetry symmetry;
   double e_BB, e_Bs1, e_Bs2, e_s1s1, e_s1s2, e_s2s2, e_min;
   double vEE, vEP1, vEP2, vP1P1, vP1P2, vP2P2;
 
-  double delta, ipcRadius, interactionRange;
+  double delta, colloidRadius, interactionRange;
   double eccentricity_p1, radius_p1;
   double eccentricity_p2, radius_p2;
   double HSdiameter, fakeHScoefficient, fakeHSexponent;
@@ -35,8 +45,8 @@ class PotentialForLammps {
   std::vector<double> fHS, fBB, fBs1, fBs2, fs1s2, fs1s1, fs2s2;
 
   void computeSiteSitePotentials();
-  void initFromEpsilons(std::string const &inputFileName);
-  void readContactValues(std::string const &inputFileName);
+  void initFromEpsilons(std::string const& inputFileName);
+  void readContactValues(std::string const& inputFileName);
   void computeEpsilonsFromContactValues();
   size_t dist(double x, double y);
 };

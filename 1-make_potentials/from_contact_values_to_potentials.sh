@@ -8,22 +8,21 @@
 # it will only appear on the output directory, so choose freely
 model_name="your-model-name"
 
-# type of the model you want to create.
-# janus models have a single patch, symmetric models a second symmetric one
-# asymmetric models have two different patches, so you will need to specify
-# the parameters of the second one below
-# recognized values are:
-# j-ospc -> janus colloid
-# s-ospc -> two-symmetric-patches colloid
-# a-ospc -> two-aymmetric-patches colloid
-# j-ipc -> janus IPC
-# s-ipc -> symmetric IPC
-# a-ipc -> asymmetric IPC
-ospc_type="s-ipc"
+# symmetry of the colloid that you want to create.
+#              accepted values:
+# janus -> janus colloids with a single patch
+# symm -> symmetric symmetric colloids with two symmetric patches
+# asymm -> asymmetric colloids with two different patches
+#        for asymm you must also specify the parameters of the second patch
+symmetry="asymm"
+
+# if you want to simulate an ipc model, set this value to 1
+# any other value disables
+ipc_model=0
 
 # parameters for the first patch
 
-# delta (distance from the Hard Core at which the potential goes to zero)
+# delta (twice the distance from the Hard Core where the potential goes to zero)
 delta=0.2
 # patch eccentricity
 ecc1=0.22
@@ -34,7 +33,7 @@ vEE=0.1
 vEP1=-1.0
 vP1P1=4.0
 
-#parameters for the second patch -- IGNORED for Janus and symmetric
+#parameters for the second patch -- **IGNORED** for Janus and symmetric
 # patch_2 eccentricity
 ecc2=0.22
 # patch_2 radius
@@ -70,10 +69,11 @@ pushd sources
   echo $vP2P2 >> inputfile
   g++ -std=c++11 printPotential.cpp main.cpp -o compute.out
 
-  target="../target_${model_name}_${ospc_type}_contact"
+  target="../target_${model_name}_${symmetry}_contact"
   [ -d $target ] && rm -rf $target
   mkdir -p $target
 
-  ./compute.out -c -m $ospc_type -i inputfile -o $target
+  [ $ipc_model -eq 1 ] && is_ipc="-p"
+  ./compute.out -c ${is_ipc} -m $symmetry -i inputfile -o $target
   mv inputfile ${target}/inputfile.dat
 popd 
