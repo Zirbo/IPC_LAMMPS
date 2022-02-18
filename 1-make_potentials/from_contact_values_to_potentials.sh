@@ -22,6 +22,7 @@ ipc_model=0
 
 # parameters for the first patch
 
+
 # delta (twice the distance from the Hard Core where the potential goes to zero)
 delta=0.2
 # patch eccentricity
@@ -32,6 +33,9 @@ rad1=0.38
 vEE=0.1
 vEP1=-1.0
 vP1P1=4.0
+
+
+
 
 #parameters for the second patch -- **IGNORED** for Janus and symmetric
 # patch_2 eccentricity
@@ -62,11 +66,13 @@ pushd sources
   echo $vEP1 >> inputfile
   echo $vP1P1 >> inputfile
 
+
   echo $ecc2 >> inputfile
   echo $rad2 >> inputfile
   echo $vEP2 >> inputfile
   echo $vP1P2 >> inputfile
   echo $vP2P2 >> inputfile
+
   g++ -std=c++11 printPotential.cpp main.cpp -o compute.out
 
   target="../target_${model_name}_${symmetry}_contact"
@@ -74,6 +80,6 @@ pushd sources
   mkdir -p $target
 
   [ $ipc_model -eq 1 ] && is_ipc="-p"
-  ./compute.out -c ${is_ipc} -m $symmetry -i inputfile -o $target
+  ./compute.out -c $is_ipc -m $symmetry -i inputfile -o $target
   mv inputfile ${target}/inputfile.dat
 popd 

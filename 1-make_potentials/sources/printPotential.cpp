@@ -21,19 +21,13 @@ PotentialForLammps::initFromEpsilons(std::string const& inputFileName)
   inputFile >> modelName;
   inputFile >> delta;
   inputFile >> eccentricity_p1;
+  inputFile >> radius_p1;
   inputFile >> e_BB >> e_Bs1 >> e_s1s1;
   inputFile >> e_min;
   if (symmetry == Symmetry::ASYMMETRIC) {
     inputFile >> eccentricity_p2;
+    inputFile >> radius_p2;
     inputFile >> e_Bs2 >> e_s1s2 >> e_s2s2;
-  } else if (symmetry == Symmetry::JANUS) {
-    e_Bs2 = 0;
-    e_s2s2 = 0;
-    e_s1s2 = 0;
-  } else if (symmetry == Symmetry::SYMMETRIC) {
-    e_Bs2 = e_Bs1;
-    e_s2s2 = e_s1s1;
-    e_s1s2 = e_s1s1;
   }
 
   inputFile.close();
