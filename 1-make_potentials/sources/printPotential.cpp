@@ -372,7 +372,7 @@ PotentialForLammps::printRadialPotentialsToFile(
     std::ofstream potentialOutputFile(fileName);
     potentialOutputFile << std::scientific << std::setprecision(6);
 
-    for (double r = HSdiameter; r < interactionRange; r += samplingStep) {
+    for (double r = HSdiameter; r < interactionRange; r += 0.001) {
       potentialOutputFile << r << '\t';
 
       size_t iBB = size_t(r / samplingStep);
