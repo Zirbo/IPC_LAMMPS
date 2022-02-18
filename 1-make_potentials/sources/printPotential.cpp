@@ -103,6 +103,19 @@ PotentialForLammps::PotentialForLammps(const std::string& inputFileName,
             << range_p1 << ", " << range_p2 << ") = " << interactionRange
             << "\n\n";
 
+  // sanity checks
+  if (eccentricity_p1 > 0.5 * HSdiameter || radius_p1 <= 0. ||
+      eccentricity_p1 <= 0.) {
+    throw std::runtime_error("First patch: invalid geometry");
+  }
+  if (eccentricity_p2 > 0.5 * HSdiameter || radius_p2 <= 0. ||
+      eccentricity_p2 <= 0.) {
+    throw std::runtime_error("Second patch: invalid geometry");
+  }
+  if (delta < 0.) {
+    throw std::runtime_error("delta cannot be negative");
+  }
+
   if (colloid == Colloid::IPC) {
     // check IPC geometry requirements
     const double diff_1 = (range_p1 / range_p2) - 1.;
