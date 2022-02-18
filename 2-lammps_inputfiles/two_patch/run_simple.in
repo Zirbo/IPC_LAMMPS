@@ -24,7 +24,8 @@ pair_coeff     1 3 <path_to_potential>/Bs2.table Bs2
 pair_coeff     2 2 <path_to_potential>/s1s1.table s1s1
 pair_coeff     2 3 <path_to_potential>/s1s2.table s1s2
 pair_coeff     3 3 <path_to_potential>/s2s2.table s2s2
-bond_coeff     1 9999.9 0.22     # center-patch distance
+bond_coeff     1 9999.9 0.22     # center-patch1 distance
+bond_coeff     2 9999.9 0.22     # center-patch2 distance
 angle_coeff    1 9999.9 180.0    # patch-patch angle
 
 neighbor       0.3 bin
