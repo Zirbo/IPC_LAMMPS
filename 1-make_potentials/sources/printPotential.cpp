@@ -99,6 +99,9 @@ PotentialForLammps::PotentialForLammps(const std::string& inputFileName,
   double range_p1 = radius_p1 + eccentricity_p1;
   double range_p2 = radius_p2 + eccentricity_p2;
   interactionRange = 2 * std::max(std::max(range_p1, range_p2), colloidRadius);
+  std::cout << "interaction range = 2 x max(" << colloidRadius << ", "
+            << range_p1 << ", " << range_p2 << ") = " << interactionRange
+            << "\n\n";
 
   if (colloid == Colloid::IPC) {
     // check IPC geometry requirements
@@ -114,14 +117,6 @@ PotentialForLammps::PotentialForLammps(const std::string& inputFileName,
   if (startFromContactValues) {
     computeEpsilonsFromContactValues();
   }
-
-  std::cout << "NORMALIZED COEFFICIENTS:"
-            << "\neps_BB   = " << e_BB / e_min
-            << "\neps_Bs1  = " << e_Bs1 / e_min
-            << "\neps_Bs2  = " << e_Bs2 / e_min
-            << "\neps_s1s1 = " << e_s1s1 / e_min
-            << "\npes_s1s2 = " << e_s1s2 / e_min
-            << "\neps_s2s2 = " << e_s2s2 / e_min << '\n';
 
   computeSiteSitePotentials();
 }
@@ -186,6 +181,21 @@ PotentialForLammps::computeEpsilonsFromContactValues()
     e_s2s2 = (vP2P2 - vEE - 2. * fBs2 * e_Bs2) / fs2s2;
   }
 
+  std::cout
+    << "overlap volumes:\n"
+    << "\nfBB = " << fBB << "\nfBs1 = " << fBs1 << "\nfBs2 = " << fBs2
+    << "\nfs1s1 = " << fs1s1 << "\nfs1s2 = " << fs1s2 << "\nfs2s2 = " << fs2s2
+    << "\n\nNORMALIZED COEFFICIENTS:"
+    << "\neps_BB   = " << e_BB / e_min << "\neps_Bs1  = " << e_Bs1 / e_min
+    << "\neps_Bs2  = " << e_Bs2 / e_min << "\neps_s1s1 = " << e_s1s1 / e_min
+    << "\neps_s1s2 = " << e_s1s2 / e_min << "\neps_s2s2 = " << e_s2s2 / e_min
+    << "\n\nResulting contact values:\nvEE = " << e_BB * fBB
+    << "\nvEP1 = " << e_BB * fBB + fBs1 * e_Bs1
+    << "\nvEP2 = " << e_BB * fBB + fBs2 * e_Bs2
+    << "\nvs1s2 = " << e_BB * fBB + fBs1 * e_Bs1 + fBs2 * e_Bs2 + fs1s1 * e_s1s1
+    << "\nvs1s1 = " << e_BB * fBB + fBs1 * e_Bs1 + fBs1 * e_Bs1 + fs1s2 * e_s1s2
+    << "\nvs2s2 = " << e_BB * fBB + fBs2 * e_Bs2 + fBs2 * e_Bs2 + fs2s2 * e_s2s2
+    << "\nDo they match the ones you inserted?\n";
 }
 
 static double
