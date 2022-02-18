@@ -75,7 +75,7 @@ pushd sources
 
   g++ -std=c++11 printPotential.cpp main.cpp -o compute.out
 
-  target="../target_${model_name}_${symmetry}_contact"
+  target="../target_${model_name}_${symmetry}_epsilons"
   [ -d $target ] && rm -rf $target
   mkdir -p $target
 
