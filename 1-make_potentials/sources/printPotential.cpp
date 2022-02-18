@@ -145,33 +145,32 @@ computeOmega(double Ra, double Rb, double rab)
 void
 PotentialForLammps::computeEpsilonsFromContactValues()
 {
-  // compute coefficients
-  e_BB = vEE;
-  e_Bs1 = vEP1 - e_BB;
-  e_s1s1 = (vP1P1 - e_BB - 2. * e_Bs1);
+  e_min = 1.0;
 
-  if (symmetry == Symmetry::ASYMMETRIC) {
-    e_Bs2 = vEP2 - e_BB;
-    e_s1s2 = (vP1P2 - e_BB - e_Bs1 - e_Bs2);
-    e_s2s2 = (vP2P2 - e_BB - 2. * e_Bs2);
-  }
-
-  // normalize using overlap volumes at contact
+  // overlap volumes at contact
   double fBB = computeOmega(colloidRadius, colloidRadius, HSdiameter);
   double fBs1 =
     computeOmega(colloidRadius, radius_p1, HSdiameter - eccentricity_p1);
   double fs1s1 =
     computeOmega(radius_p1, radius_p1, HSdiameter - 2. * eccentricity_p1);
+  double fBs2 =
+    computeOmega(colloidRadius, radius_p2, HSdiameter - eccentricity_p2);
+  double fs1s2 = computeOmega(
+    radius_p1, radius_p2, HSdiameter - eccentricity_p1 - eccentricity_p2);
+  double fs2s2 =
+    computeOmega(radius_p2, radius_p2, HSdiameter - 2. * eccentricity_p2);
 
-  // std::cout << "COEFFICIENTS:"
-  //           << "\nBB = " << e_BB << " f BB = " << fBB
-  //           << "\nBs = " << e_Bs1 << " f Bs = " << fBs1
-  //           << "\nss = " << e_s1s1 << " f ss = " << fs1s1
-  //           << '\n';
-
-  e_BB /= fBB;
-  e_Bs1 /= fBs1;
-  e_s1s1 /= fs1s1;
+  // compute coefficients
+  if (fBB == 0.) {
+    std::cout << "WARNING: fBB is zero. That means delta is zero.\n"
+              << "Overriding e_BB and vEE to also be zero\n\n";
+    e_BB = 0;
+    vEE = 0;
+  } else {
+    e_BB = vEE / fBB;
+  }
+  e_Bs1 = (vEP1 - vEE) / fBs1;
+  e_s1s1 = (vP1P1 - vEE - 2. * fBs1 * e_Bs1) / fs1s1;
 
   if (symmetry == Symmetry::JANUS) {
     e_Bs2 = 0;
@@ -182,19 +181,11 @@ PotentialForLammps::computeEpsilonsFromContactValues()
     e_s1s2 = e_s1s1;
     e_s2s2 = e_s1s1;
   } else if (symmetry == Symmetry::ASYMMETRIC) {
-    double fBs2 =
-      computeOmega(colloidRadius, radius_p2, HSdiameter - eccentricity_p2);
-    double fs1s2 = computeOmega(
-      radius_p1, radius_p2, HSdiameter - eccentricity_p1 - eccentricity_p2);
-    double fs2s2 =
-      computeOmega(radius_p2, radius_p2, HSdiameter - 2. * eccentricity_p2);
-
-    e_Bs2 /= fBs2;
-    e_s1s2 /= fs1s2;
-    e_s2s2 /= fs2s2;
+    e_Bs2 = (vEP2 - vEE) / fBs2;
+    e_s1s2 = (vP1P2 - vEE - fBs1 * e_Bs1 - fBs2 * e_Bs2) / fs1s2;
+    e_s2s2 = (vP2P2 - vEE - 2. * fBs2 * e_Bs2) / fs2s2;
   }
 
-  e_min = 1.0;
 }
 
 static double
