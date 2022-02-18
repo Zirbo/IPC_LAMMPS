@@ -1,23 +1,23 @@
 #! /usr/bin/python3
 
-# writes a configuration with a cubic lattice structure of ipcs that you can melt.
+# writes a configuration with a face-centered-cubic lattice structure of janus OSPCs
 
 import argparse
 from math import cos, sin, sqrt, pi
 from numpy.random import ranf
 
 parser = argparse.ArgumentParser(description='Creates a LAMMPS starting configuration.')
-parser.add_argument('nIPCsSide', metavar='N', type=int, help='number of IPCs: 4*N**2')
+parser.add_argument('nOSPCsSide', metavar='N', type=int, help='number of OSPCs: 4*N**2')
 parser.add_argument('density', metavar='d', type=float, help='density')
-parser.add_argument('ecc', metavar='e', type=float, help='eccentricity off the IPCs')
+parser.add_argument('ecc', metavar='e', type=float, help='eccentricity off the OSPCs')
 args = parser.parse_args()
 
-outputFile = open('startingConfiguration.txt','w')
-args.nIPCsPlane = args.nIPCsSide**2
-args.nIPCsCube  = args.nIPCsSide**3
-args.nIPCs = 4*args.nIPCsCube
-args.side = (args.nIPCs/args.density)**(1./3.)
-args.sideStep = args.side/args.nIPCsSide
+outputFile = open('startingstate.txt','w')
+args.nOSPCsPlane = args.nOSPCsSide**2
+args.nOSPCsCube  = args.nOSPCsSide**3
+args.nOSPCs = 4*args.nOSPCsCube
+args.side = (args.nOSPCs/args.density)**(1./3.)
+args.sideStep = args.side/args.nOSPCsSide
 
 print(args)
 
@@ -28,11 +28,11 @@ lattice_roots=( (0.0, 0.0, 0.0, 0),
 
 
 
-outputFile.write("# 3D starting configuration for LAMMPS created with a script available at\n")
-outputFile.write("# https://github.com/Zirbo/IPCsim/tree/master/lammps")
+outputFile.write("# starting configuration for LAMMPS generated with a script available at\n")
+outputFile.write("# https://github.com/Zirbo/OSPC_LAMMPS")
 outputFile.write("\n")
-outputFile.write("\n" + str(2*args.nIPCs).rjust(16) + " atoms")
-outputFile.write("\n" + str(1*args.nIPCs).rjust(16) + " bonds")
+outputFile.write("\n" + str(2*args.nOSPCs).rjust(16) + " atoms")
+outputFile.write("\n" + str(1*args.nOSPCs).rjust(16) + " bonds")
 outputFile.write("\n")
 
 outputFile.write("\n" + str(2).rjust(16) + " atom types")
@@ -56,17 +56,17 @@ outputFile.write("\n")
 outputFile.write("\nAtoms")
 outputFile.write("\n#  atom-ID mol-ID atom-type charge    x               y               z")
 for r in lattice_roots:
-    for iz in range(0, args.nIPCsSide):
-        for iy in range(0, args.nIPCsSide):
-            for ix in range(0, args.nIPCsSide):
-                # ipc center
-                i = 1 + 2*(ix + iy*args.nIPCsSide + iz*args.nIPCsPlane + args.nIPCsCube*r[3])
-                ipcNum = int(i/2) + 1
+    for iz in range(0, args.nOSPCsSide):
+        for iy in range(0, args.nOSPCsSide):
+            for ix in range(0, args.nOSPCsSide):
+                # ospc center
+                i = 1 + 2*(ix + iy*args.nOSPCsSide + iz*args.nOSPCsPlane + args.nOSPCsCube*r[3])
+                ospcNum = int(i/2) + 1
                 x = (0.5 + r[0] + ix + 0.03*ranf())*args.sideStep
                 y = (0.5 + r[1] + iy + 0.03*ranf())*args.sideStep
                 z = (0.5 + r[2] + iz + 0.03*ranf())*args.sideStep
                 outputFile.write("\n" + str(i).rjust(10) +
-                      str(ipcNum).rjust(10) +
+                      str(ospcNum).rjust(10) +
                       str(1).rjust(10) +
                       str(-1.).rjust(10) +
                      '{:3.8f}'.format(x).rjust(16) +
@@ -82,7 +82,7 @@ for r in lattice_roots:
                 pz /= mod
                 # patches
                 outputFile.write("\n" + str(i+1).rjust(10) +
-                      str(ipcNum).rjust(10) +
+                      str(ospcNum).rjust(10) +
                       str(2).rjust(10) +
                       str(1.0).rjust(10) +
                      '{:3.8f}'.format(x + args.ecc*px).rjust(16) +
@@ -92,7 +92,7 @@ for r in lattice_roots:
 outputFile.write("\n")
 outputFile.write("\nBonds")
 outputFile.write("\n#  ID bond-type atom-1 atom-2")
-for i in range(args.nIPCs):
+for i in range(args.nOSPCs):
     IDcenter = 2*i + 1
     IDpatch = 2*i + 2
     outputFile.write("\n" + str(i+1).rjust(10) + str(1).rjust(10) +

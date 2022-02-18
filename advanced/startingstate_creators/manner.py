@@ -56,7 +56,7 @@ p = [ [ ecc*cos(alpha), ecc*sin(alpha), 0. ] ,
 
 
 outputFile.write("# 3D starting configuration for LAMMPS created with a script available at\n")
-outputFile.write("# https://github.com/Zirbo/IPCsim/tree/master/lammps\n")
+outputFile.write("# https://github.com/Zirbo/OSPC_LAMMPS\n")
 outputFile.write("# The wafer point particles are from 1 to " + str(3*totalWaferIPCs))
 
 outputFile.write("\n")

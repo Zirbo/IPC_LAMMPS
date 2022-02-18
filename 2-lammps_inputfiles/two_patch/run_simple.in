@@ -1,5 +1,5 @@
 ###########################
-# IPC LAMMPS              #
+# OSPC LAMMPS - 2 patches #
 ###########################
 
 dimension      3
@@ -18,16 +18,22 @@ angle_style    harmonic
 pair_modify    mix geometric tail yes
 
 # force field parameters
-pair_coeff     1 1 ../lammpspot_45n/BB.table BB
-pair_coeff     1 2 ../lammpspot_45n/Bs1.table Bs1
-pair_coeff     2 2 ../lammpspot_45n/s1s1.table s1s1
-bond_coeff     1 9999.9 0.22     # center-patch distance
-angle_coeff    1 9999.9 120.0    # patch-patch angle
+pair_coeff     1 1 <path_to_potential>/BB.table BB
+pair_coeff     1 2 <path_to_potential>/Bs1.table Bs1
+pair_coeff     1 3 <path_to_potential>/Bs2.table Bs2
+pair_coeff     2 2 <path_to_potential>/s1s1.table s1s1
+pair_coeff     2 3 <path_to_potential>/s1s2.table s1s2
+pair_coeff     3 3 <path_to_potential>/s2s2.table s2s2
+bond_coeff     1 9999.9 0.22     # center-patch1 distance
+bond_coeff     2 9999.9 0.22     # center-patch2 distance
+angle_coeff    1 9999.9 180.0    # patch-patch angle
 
 neighbor       0.3 bin
 neigh_modify   every 1 check yes
 
-thermo_style   custom step  temp epair
+# pe includes bond contributions, ignore it.
+variable       tot_pot   equal   3*epair
+thermo_style   custom step  temp v_tot_pot pe
 log            outputFile.txt
 thermo         25000
 

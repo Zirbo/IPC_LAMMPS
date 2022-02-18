@@ -55,7 +55,7 @@ lattice_roots=( (0.0, 0.0, 0.0, 0),
 
 
 outputFile.write("# 3D starting configuration for LAMMPS created with a script available at\n")
-outputFile.write("# https://github.com/Zirbo/IPCsim/tree/master/lammps")
+outputFile.write("# https://github.com/Zirbo/OSPC_LAMMPS\n")
 outputFile.write("\n")
 outputFile.write("\n" + str(4*args.nIPCs).rjust(16) + " atoms")
 outputFile.write("\n" + str(3*args.nIPCs).rjust(16) + " bonds")

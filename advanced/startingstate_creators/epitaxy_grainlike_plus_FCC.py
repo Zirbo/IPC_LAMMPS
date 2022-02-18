@@ -63,7 +63,7 @@ p = [ [ ecc*cos(alpha), ecc*sin(alpha), 0. ] ,
 
 
 outputFile.write("# 3D starting configuration for LAMMPS created with a script available at\n")
-outputFile.write("# https://github.com/Zirbo/IPC_LAMMPS")
+outputFile.write("# https://github.com/Zirbo/OSPC_LAMMPS\n")
 outputFile.write("# The plane particles are from 1 to " + str(nWaferX*nWaferY))
 
 outputFile.write("\n")

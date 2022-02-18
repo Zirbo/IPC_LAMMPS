@@ -55,7 +55,7 @@ p = [ [ ecc, 0., 0. ] ,
 
 
 outputFile.write("# 3D starting configuration for LAMMPS created with a script available at\n")
-outputFile.write("# https://github.com/Zirbo/IPCsim/tree/master/lammps\n")
+outputFile.write("# https://github.com/Zirbo/OSPC_LAMMPS\n")
 outputFile.write("# The plane particles are from 1 to " + str(nPlaneX*nPlaneX))
 
 outputFile.write("\n")

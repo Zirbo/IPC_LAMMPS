@@ -1,4 +1,7 @@
-# 3D starting configuration for LAMMPS created with a script available at# https://github.com/Zirbo/IPCsim/tree/master/lammps# The plane particles are from 1 to 168
+# starting configuration for LAMMPS generated with a script available at
+# https://github.com/Zirbo/OSPC_LAMMPS
+# The plane particles are from 1 to 168
+# The script to generate this type of startingstates is in /advanced
 
             6204 atoms
             4136 bonds

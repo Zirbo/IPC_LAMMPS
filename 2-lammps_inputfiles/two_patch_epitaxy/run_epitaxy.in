@@ -1,0 +1,82 @@
+###########################
+# OSPC LAMMPS - epitaxy   #
+###########################
+
+dimension      3
+units          lj
+boundary       p p f
+atom_style     full
+
+# read starting configuration
+read_data      startingstate_epitaxy.txt
+#read_restart  restartingstate.new
+
+# interaction potential
+pair_style     table linear 120000
+bond_style     harmonic
+angle_style    harmonic
+pair_modify    mix geometric tail yes
+
+# force field parameters
+pair_coeff     1 1 <path_to_potential>/BB.table BB
+pair_coeff     1 2 <path_to_potential>/Bs1.table Bs1
+pair_coeff     1 3 <path_to_potential>/Bs2.table Bs2
+pair_coeff     2 2 <path_to_potential>/s1s1.table s1s1
+pair_coeff     2 3 <path_to_potential>/s1s2.table s1s2
+pair_coeff     3 3 <path_to_potential>/s2s2.table s2s2
+bond_coeff     1 9999.9 0.22     # center-patch distance
+angle_coeff    1 9999.9 180.0    # patch-patch angle
+
+group          substrate_OSPCs   id <> 1 504 # 168*3
+group          fluid_OSPCs     subtract  all substrate_OSPCs
+group          substrate_OSPCs_centers   id 1:504:3 # 168*3
+group          substrate_OSPCs_patches   subtract substrate_OSPCs substrate_OSPCs_centers
+
+neighbor       0.3 bin
+neigh_modify   every 1 check yes
+
+# pe includes bond contributions, ignore it.
+variable       tot_pot   equal   3*epair
+thermo_style   custom step  temp v_tot_pot pe
+log            outputFile.txt
+thermo         25000
+dump           dumpy all atom 25000 trajectory.lammpstrj
+dump_modify    dumpy     sort id    pbc yes
+
+timestep       0.001
+
+fix    zwalls  fluid_OSPCs  wall/reflect zlo EDGE zhi EDGE
+
+# equilibration of the substrate
+velocity       substrate_OSPCs_patches create 0.11 ${seed} dist gaussian rot yes
+fix    1       substrate_OSPCs_patches nvt temp 0.11 0.04 1.0
+run            100000
+unfix  1
+
+# equilibrate the fluid
+velocity       fluid_OSPCs create 0.20 ${seed} dist gaussian rot yes
+fix    1       fluid_OSPCs nvt temp 0.20 0.14 1.0
+run            100000
+fix    1       fluid_OSPCs nvt temp 0.14 0.13 1.0
+run            100000
+fix    1       fluid_OSPCs nvt temp 0.13 0.12 1.0
+run            200000
+
+# assembly
+fix    1       fluid_OSPCs              nvt temp 0.120 0.110 1.0
+fix    2       substrate_OSPCs_patches  nvt temp 0.120 0.110 1.0
+run            50000000
+
+write_restart  restartingstate_1.new
+
+# collect statistics
+undump         dumpy
+dump           dumpy all atom 10000 trajectory_final.lammpstrj
+dump_modify    dumpy     sort id    pbc yes
+fix    1       fluid_OSPCs              nvt temp 0.115 0.115 1.0
+fix    2       substrate_OSPCs_patches  nvt temp 0.115 0.115 1.0
+run            10000000
+
+
+
+write_restart  restartingstate.new
