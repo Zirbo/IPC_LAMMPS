@@ -9,6 +9,9 @@
 #include <string>
 #include <vector>
 
+// #define DEBUG_ORIENT
+// #define DEBUG_MAIN
+
 void
 PotentialForLammps::initFromEpsilons(std::string const& inputFileName)
 {
@@ -24,7 +27,15 @@ PotentialForLammps::initFromEpsilons(std::string const& inputFileName)
   inputFile >> radius_p1;
   inputFile >> e_BB >> e_Bs1 >> e_s1s1;
   inputFile >> e_min;
-  if (symmetry == Symmetry::ASYMMETRIC) {
+  if (symmetry == Symmetry::JANUS) {
+    e_Bs2 = 0;
+    e_s2s2 = 0;
+    e_s1s2 = 0;
+  } else if (symmetry == Symmetry::SYMMETRIC) {
+    e_Bs2 = e_Bs1;
+    e_s1s2 = e_s1s1;
+    e_s2s2 = e_s1s1;
+  } else if (symmetry == Symmetry::ASYMMETRIC) {
     inputFile >> eccentricity_p2;
     inputFile >> radius_p2;
     inputFile >> e_Bs2 >> e_s1s2 >> e_s2s2;
@@ -93,9 +104,11 @@ PotentialForLammps::PotentialForLammps(const std::string& inputFileName,
   double range_p1 = radius_p1 + eccentricity_p1;
   double range_p2 = radius_p2 + eccentricity_p2;
   interactionRange = 2 * std::max(std::max(range_p1, range_p2), colloidRadius);
+#ifdef DEBUG_MAIN
   std::cout << "interaction range = 2 x max(" << colloidRadius << ", "
             << range_p1 << ", " << range_p2 << ") = " << interactionRange
             << "\n\n";
+#endif
 
   // sanity checks
   if (eccentricity_p1 > 0.5 * HSdiameter || radius_p1 <= 0. ||
@@ -124,6 +137,8 @@ PotentialForLammps::PotentialForLammps(const std::string& inputFileName,
   if (startFromContactValues) {
     computeEpsilonsFromContactValues();
   }
+
+  printComparisons();
 
   computeSiteSitePotentials();
 }
@@ -187,22 +202,48 @@ PotentialForLammps::computeEpsilonsFromContactValues()
     e_s1s2 = (vP1P2 - vEE - fBs1 * e_Bs1 - fBs2 * e_Bs2) / fs1s2;
     e_s2s2 = (vP2P2 - vEE - 2. * fBs2 * e_Bs2) / fs2s2;
   }
+}
+
+void
+PotentialForLammps::printComparisons()
+{
+  // overlap volumes at contact
+  double fBB = computeOmega(colloidRadius, colloidRadius, HSdiameter);
+  double fBs1 =
+    computeOmega(colloidRadius, radius_p1, HSdiameter - eccentricity_p1);
+  double fs1s1 =
+    computeOmega(radius_p1, radius_p1, HSdiameter - 2. * eccentricity_p1);
+  double fBs2 =
+    computeOmega(colloidRadius, radius_p2, HSdiameter - eccentricity_p2);
+  double fs1s2 = computeOmega(
+    radius_p1, radius_p2, HSdiameter - eccentricity_p1 - eccentricity_p2);
+  double fs2s2 =
+    computeOmega(radius_p2, radius_p2, HSdiameter - 2. * eccentricity_p2);
 
   std::cout
+#ifdef DEBUG_MAIN
     << "overlap volumes:\n"
     << "\nfBB = " << fBB << "\nfBs1 = " << fBs1 << "\nfBs2 = " << fBs2
     << "\nfs1s1 = " << fs1s1 << "\nfs1s2 = " << fs1s2 << "\nfs2s2 = " << fs2s2
-    << "\n\nNORMALIZED COEFFICIENTS:"
+#endif
+    << "\n\nEPSILON COEFFICIENTS:"
+    << "\neps_BB   = " << e_BB << "\neps_Bs1  = " << e_Bs1
+    << "\neps_Bs2  = " << e_Bs2 << "\neps_s1s1 = " << e_s1s1
+    << "\neps_s1s2 = " << e_s1s2 << "\neps_s2s2 = " << e_s2s2
+    << "\neps_min = " << e_min
+    << "\n\nNORMALIZED EPSILON COEFFICIENTS:"
     << "\neps_BB   = " << e_BB / e_min << "\neps_Bs1  = " << e_Bs1 / e_min
     << "\neps_Bs2  = " << e_Bs2 / e_min << "\neps_s1s1 = " << e_s1s1 / e_min
     << "\neps_s1s2 = " << e_s1s2 / e_min << "\neps_s2s2 = " << e_s2s2 / e_min
-    << "\n\nResulting contact values:\nvEE = " << e_BB * fBB
-    << "\nvEP1 = " << e_BB * fBB + fBs1 * e_Bs1
-    << "\nvEP2 = " << e_BB * fBB + fBs2 * e_Bs2
-    << "\nvs1s2 = " << e_BB * fBB + fBs1 * e_Bs1 + fBs2 * e_Bs2 + fs1s1 * e_s1s1
-    << "\nvs1s1 = " << e_BB * fBB + fBs1 * e_Bs1 + fBs1 * e_Bs1 + fs1s2 * e_s1s2
-    << "\nvs2s2 = " << e_BB * fBB + fBs2 * e_Bs2 + fBs2 * e_Bs2 + fs2s2 * e_s2s2
-    << "\nDo they match the ones you inserted?\n";
+    << "\n\nRESULTING CONTACT VALUES:"
+    << "\nvEE = " << (e_BB * fBB) / e_min
+    << "\nvEP1 = " << (e_BB * fBB + fBs1 * e_Bs1) / e_min
+    << "\nvEP2 = " << (e_BB * fBB + fBs2 * e_Bs2) / e_min
+    << "\nvs1s2 = " << (e_BB * fBB + fBs1 * e_Bs1 + fBs2 * e_Bs2 + fs1s1 * e_s1s1) / e_min
+    << "\nvs1s1 = " << (e_BB * fBB + fBs1 * e_Bs1 + fBs1 * e_Bs1 + fs1s2 * e_s1s2) / e_min
+    << "\nvs2s2 = " << (e_BB * fBB + fBs2 * e_Bs2 + fBs2 * e_Bs2 + fs2s2 * e_s2s2) / e_min
+    << "\nIf these values DO NOT MATCH the ones you inserted,"
+    << "\nthere must be an ERROR.\n";
 }
 
 static double
@@ -422,8 +463,7 @@ PotentialForLammps::dist(double x, double y)
 static void
 log(std::string orient, size_t dist, double pot)
 {
-// #define DEBUG
-#ifdef DEBUG
+#ifdef DEBUG_ORIENT
   std::cout << orient << " dist: " << dist * 1e-5 << ", pot: " << pot << "\n";
 #endif
 }

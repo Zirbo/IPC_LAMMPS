@@ -47,6 +47,7 @@ private:
   void computeSiteSitePotentials();
   void initFromEpsilons(std::string const& inputFileName);
   void readContactValues(std::string const& inputFileName);
+  void printComparisons();
   void computeEpsilonsFromContactValues();
   size_t dist(double x, double y);
 };

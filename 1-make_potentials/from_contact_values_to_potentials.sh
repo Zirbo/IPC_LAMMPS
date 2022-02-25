@@ -11,19 +11,20 @@ model_name="your-model-name"
 # symmetry of the colloid that you want to create.
 #              accepted values:
 # janus -> janus colloids with a single patch
-# symm -> symmetric symmetric colloids with two symmetric patches
-# asymm -> asymmetric colloids with two different patches
+# symm -> colloids with two polar and identical patches
+# asymm -> colloids with two polar but different (in geometry and/or interaction) patches
 #        for asymm you must also specify the parameters of the second patch
 symmetry="asymm"
 
 # if you want to simulate an ipc model, set this value to 1
-# any other value disables
+# any other value disables it
 ipc_model=0
 
 # parameters for the first patch
 
 
-# delta (twice the distance from the Hard Core where the potential goes to zero)
+# delta -> TWICE the distance from the colloid surface (radius set to 0.5)
+#               where the potential goes to zero
 delta=0.2
 # patch eccentricity
 ecc1=0.22
@@ -37,7 +38,7 @@ vP1P1=4.0
 
 
 
-#parameters for the second patch -- **IGNORED** for Janus and symmetric
+# parameters for the second patch -- **IGNORED** for Janus and symmetric
 # patch_2 eccentricity
 ecc2=0.22
 # patch_2 radius
