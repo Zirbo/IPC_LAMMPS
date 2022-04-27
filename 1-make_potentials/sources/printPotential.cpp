@@ -179,7 +179,7 @@ PotentialForLammps::computeEpsilonsFromContactValues()
 
   // compute coefficients
   if (fBB == 0.) {
-    std::cout << "WARNING: fBB is zero. That means delta is zero.\n"
+    std::cout << "WARNING: fBB is zero. Did you set delta to zero?\n"
               << "Overriding e_BB and vEE to also be zero\n\n";
     e_BB = 0;
     vEE = 0;
@@ -235,14 +235,20 @@ PotentialForLammps::printComparisons()
     << "\neps_BB   = " << e_BB / e_min << "\neps_Bs1  = " << e_Bs1 / e_min
     << "\neps_Bs2  = " << e_Bs2 / e_min << "\neps_s1s1 = " << e_s1s1 / e_min
     << "\neps_s1s2 = " << e_s1s2 / e_min << "\neps_s2s2 = " << e_s2s2 / e_min
-    << "\n\nRESULTING CONTACT VALUES:"
-    << "\nvEE = " << (e_BB * fBB) / e_min
-    << "\nvEP1 = " << (e_BB * fBB + fBs1 * e_Bs1) / e_min
-    << "\nvEP2 = " << (e_BB * fBB + fBs2 * e_Bs2) / e_min
-    << "\nvs1s2 = " << (e_BB * fBB + fBs1 * e_Bs1 + fBs2 * e_Bs2 + fs1s1 * e_s1s1) / e_min
-    << "\nvs1s1 = " << (e_BB * fBB + fBs1 * e_Bs1 + fBs1 * e_Bs1 + fs1s2 * e_s1s2) / e_min
-    << "\nvs2s2 = " << (e_BB * fBB + fBs2 * e_Bs2 + fBs2 * e_Bs2 + fs2s2 * e_s2s2) / e_min
-    << "\nIf these values DO NOT MATCH the ones you inserted,"
+    << "\n\nRESULTING CONTACT VALUES:";
+   if (false) {//symmetry == Symmetry::JANUS) {
+      std::cout << "\nback-back = " << (e_BB * fBB) / e_min
+      << "\nback-patch = " << (e_BB * fBB + fBs1 * e_Bs1) / e_min
+      << "\npatch-patch = " << (e_BB * fBB + 2*fBs1 * e_Bs1 + fs1s1 * e_s1s1) / e_min;
+   } else {
+     std::cout << "\nvEE = " << (e_BB * fBB) / e_min
+      << "\nvEP1 = " << (e_BB * fBB + fBs1 * e_Bs1) / e_min
+      << "\nvEP2 = " << (e_BB * fBB + fBs2 * e_Bs2) / e_min
+      << "\nvs1s1 = " << (e_BB * fBB + fBs1 * e_Bs1 + fBs1 * e_Bs1 + fs1s1 * e_s1s1) / e_min
+      << "\nvs1s2 = " << (e_BB * fBB + fBs1 * e_Bs1 + fBs2 * e_Bs2 + fs1s2 * e_s1s2) / e_min
+      << "\nvs2s2 = " << (e_BB * fBB + fBs2 * e_Bs2 + fBs2 * e_Bs2 + fs2s2 * e_s2s2) / e_min;
+   }
+   std::cout << "\nIf these values DO NOT MATCH the ones you inserted,"
     << "\nthere must be an ERROR.\n";
 }
 
