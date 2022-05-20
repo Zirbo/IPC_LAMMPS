@@ -5,3 +5,4 @@ pushd bld
   cmake ../sources/
   make -j4
 popd
+cp bld/lammpsIPCpostprocess .

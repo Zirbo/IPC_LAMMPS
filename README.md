@@ -50,7 +50,13 @@ For any help, feel free to contact us :)</p>
     IMPORTANT: you need a c+11-compatible version of g++ installed to be able to build.
   </li>
 
-  <li> 2-lammps_inputfiles <br>
+  <li> 2-startingstate_creators <br>
+    contains Python3 scripts that can be used to generate FCC startingstates
+    for janus and two-patch ospcs. There's also one cubic lattice for FCC only.
+    All of them have a help, so run them with the -h flag to get explanations.
+  </li>
+
+  <li> 3-lammps_inputfiles <br>
     each subdirectory of it contains a sample .in file and a suitable
     startingstate.
     <ul>
@@ -69,13 +75,24 @@ For any help, feel free to contact us :)</p>
     </ul>
   </li>
 
-  <li> 3-startingstate_creators <br>
-    contains Python3 scripts that can be used to generate FCC startingstates
-    for janus and two-patch ospcs. There's also one cubic lattice for FCC only.
-    All of them have a help, so run them with the -h flag to get explanations.
+  <li> 4-postprocess <br>
+    !!! currently WIP !!!
+    <ul>
+      <li>does not support Janus</li>
+      <li>does not support Asymmetric OSPCs</li>
+      <li>works with any symmetric OSPC, although the code still refers to IPCs</li>
+    </ul>
+    Run the build.sh script to obtain the binary;
+    a c+11-compatible version of g++ and CMake 3.5 are required.
+
+    Run the obtained binary without arguments to see what arguments are required.
+    You need a valid trajectory, the directory with the potentials used to run the
+    simulation, and an inputfile with eccentricity and patch radius.
+
+    Will be extended to OSPCs as soon as possible :)
   </li>
 
-  <li> advanced <br>
+  <li> 9-advanced <br>
     contains other startingstate generators, postprocess and visualization
     tools that we have been using in our research.
     You are welcome to peep, but they are not all well documented,
