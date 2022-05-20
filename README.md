@@ -1,104 +1,122 @@
-<h1>OSPC for LAMMPS</h1>
-<p>Implementation of Overlapping Sphere Patchy Colloids for LAMMPS.</p>
+# OSPC for LAMMPS
 
-<p>We provide all that is necessary to simulate OSPCs with LAMMPS:
+Implementation of Overlapping Sphere Patchy Colloids for LAMMPS.
+
+We provide all that is necessary to simulate OSPCs with LAMMPS:
 sample .in files and startingstates, a program to print and tabulate the
 OSPC potential, and generators of startingstates.
 Anybody can start simulating IPCs in LAMMPS in few minutes.
-For any help, feel free to contact us :)</p>
+For any help, feel free to contact us here on GitHub.
 
-<p>We have 4 directories.</p>
+We have the following directories:
 
-<ol>
-  <li> 1-make_potentials <br>
-    contains programs that compute the potentials in LAMMPS format. <br>
-    Three scripts are given:<br>
-    <ul>
-       <li>
-       from_contact_values_to_potentials.sh <br>
-       requires as input (modify the file to supply the inputs!)
-       the geometric parameters and the desired contact values of the potential
-       in the three EE, EP1 and P1P1 orientations
-       (plus EP2, P1P2, P2P2 for asymmetric models)
-       and prints out the potential in an output directory,
-       named target_<modelname>_<symmetry>_contact.
-       The directory contains a lammpspot dir that contains your potential.
-       In addition there will be two directories,
-       lammpspot_angular_plots and
-       lammpspot_radial_plots,
-       whose content can be plotted using gnuplot or xmgrace, so you can
-       quickly visualize your potential. See the reference paper [2] for an
-       explanation of the orientations.
-       Finally there is also a file, inputfile.dat,
-       that recaps your input values.
-       </li>
-       <li>
-       from_epsilon_to_potentials.sh <br>
-       requires as input (modify the file to supply the inputs!)
-       the geometric parameters and the epsilons from the mapping (see the
-       reference papers!) and prints out the potential in the output directory
-       named target_<modelname>_<symmetry>_epsilons.
-       The content is the same as for from_contact_values_to_potentials.sh.
-       </li>
-       <li>
-       compute_ipc_geometry.py <br>
-       in case you want to follow an ipc geometry, this python script helps
-       you determine eccentricity and patch radius from patch amplitude and
-       interaction range, or viceversa. check the inline manual with -h
-       </li>
-    </ul>
-    IMPORTANT: you need a c+11-compatible version of g++ installed to be able to build.
-  </li>
+## 1-make_potentials
+Contains programs that compute the potentials in LAMMPS format, and some helpers.
 
-  <li> 2-startingstate_creators <br>
-    contains Python3 scripts that can be used to generate FCC startingstates
-    for janus and two-patch ospcs. There's also one cubic lattice for FCC only.
-    All of them have a help, so run them with the -h flag to get explanations.
-  </li>
+### from_contact_values_to_potentials.sh
+(requires a c++11-compatible version of g++)
 
-  <li> 3-lammps_inputfiles <br>
-    each subdirectory of it contains a sample .in file and a suitable
-    startingstate.
-    <ul>
-      <li>copy them to the directory where you want to run</li>
-      <li>copy in that directory the potential that you want to use
-        (see printpotential below!)
-        and fix its name and path in the .in file</li>
-      <li>run LAMMPS: <br>
-         <code>$ mpirun -np <num_cpus> </lammps/exe/path> -in run_*.in -var seed $RANDOM </code> <br>
-       where the seed is used to initialize the velocities, $RANDOM is a bash command <br>
-    Your LAMMPS distribution needs to be compiled with the MOLECULE package.
-    There is also a sample tk script that you can load in VMD (Visual Molecular
-    Dynamics) to visualize your trajectory:<br>
-    <code>$ vmd -e vmdscript.tk </path/to/trajectory.lammpstrj></code>
-        </li>
-    </ul>
-  </li>
+requires as input (modify the file to supply the inputs!)
+the geometric parameters and the desired contact values of the potential
+in the three EE, EP1 and P1P1 orientations
+(plus EP2, P1P2, P2P2 for asymmetric models)
+or BB, BP and PP for Janus,
+and prints out the potential in an output directory,
+named `target_<modelname>_<symmetry>_contact`.
 
-  <li> 4-postprocess <br>
-    !!! currently WIP !!!
-    <ul>
-      <li>does not support Janus</li>
-      <li>does not support Asymmetric OSPCs</li>
-      <li>works with any symmetric OSPC, although the code still refers to IPCs</li>
-    </ul>
-    Run the build.sh script to obtain the binary;
-    a c+11-compatible version of g++ and CMake 3.5 are required.
+The directory contains a lammpspot dir that contains your potential.
+In addition there will be two directories,
+lammpspot_angular_plots and
+lammpspot_radial_plots,
+whose content can be plotted using gnuplot or xmgrace, so you can
+quickly visualize your potential. See the reference paper [3] for an
+explanation of the orientations.
 
-    Run the obtained binary without arguments to see what arguments are required.
-    You need a valid trajectory, the directory with the potentials used to run the
-    simulation, and an inputfile with eccentricity and patch radius.
+Finally there is also a file, inputfile.dat,
+that recaps your input values.
 
-    Will be extended to OSPCs as soon as possible :)
-  </li>
+### from_contact_values_to_potentials_gui.py
+(requires python3 and package pyQt)
 
-  <li> 9-advanced <br>
-    contains other startingstate generators, postprocess and visualization
-    tools that we have been using in our research.
-    You are welcome to peep, but they are not all well documented,
-    so use them at your own risk ;)
-  </li>
-</ol>
+GUI for the script above. doesn't work yet :(
 
-<p>We hope that you will have as much fun playing with OSPCs as we did :D</p>
-<p>S.F. & E.B. </p>
+### from_epsilon_to_potentials.sh
+(requires a c++11-compatible version of g++)
+
+Requires as input (modify the file to supply the inputs!)
+the geometric parameters and the epsilons from the mapping (see the
+reference papers!) and prints out the potential in the output directory
+named `target_<modelname>_<symmetry>_epsilons`.
+
+The content is the same as for from_contact_values_to_potentials.sh.
+
+
+### compute_ipc_geometry.py
+(requires python3)
+
+In case you want to follow the IPC geometry, this python script helps
+you determine eccentricity and patch radius from patch amplitude and
+interaction range, or viceversa. Check the inline manual with -h.
+
+## 2-startingstate_creators
+Contains Python3 scripts that can be used to generate FCC startingstates
+for Janus and two-patch OSPCs. There's also one cubic lattice for two-patch only.
+All of them have an inline help, so run them with the -h flag to get explanations.
+
+## 3-lammps_inputfiles
+Each subdirectory of it contains a sample .in file and a sample
+startingstate.
+To run run a simulation you have to:
+
+- copy th .in file to the directory where you want to run
+- copy in that directory the potential and startingstate that you want to use
+- adapt the .in file with paths to startingstate, potentials and eccentricities.
+- run LAMMPS:
+```
+$ mpirun -np <num_cpus> </lammps/exe/path> -in run_*.in -var seed $RANDOM
+```
+where the seed is used to initialize the velocities (`$RANDOM` is a bash command).
+Your LAMMPS distribution needs to be compiled with the MOLECULE package.
+
+There is also a sample tk script that you can load in VMD (Visual Molecular
+Dynamics) to visualize your trajectory:
+```
+$ vmd -e vmdscript.tk </path/to/trajectory.lammpstrj>
+```
+
+## 4-postprocess
+!!! currently WIP !!!
+
+ - does not support Janus
+ - does not support Asymmetric OSPCs
+ - works with any symmetric OSPC, although the code still refers to IPCs
+
+Run the build.sh script to obtain the binary;
+a c++11-compatible version of g++ and CMake 3.5 are required.
+
+Run the obtained binary without arguments to see what arguments are required.
+You need a valid trajectory, the directory with the potentials used to run the
+simulation, and an inputfile with eccentricity and patch radius.
+
+Will be extended to all OSPCs as soon as possible :)
+
+## 9-advanced
+Contains other startingstate generators and visualization tools
+that we have been using in our research.
+You are welcome to peep, but they are not all well documented,
+so use them at your own risk ;)
+
+
+## Have fun!
+We hope that you will have as much fun playing with OSPCs as we did :D
+S.F. & E.B.
+
+## References
+[1] "Inverse patchy colloids: from microscopic description to mesoscopic coarse-graining"
+E. Bianchi, G. Kahl, and C. N. Likos - Soft Matter 7, 8313 (2011) 
+
+[2] "Molecular dynamics simulations of inverse patchy colloids"
+S. Ferrari, G. Kahl, E. Bianchi - Eur. Phys. J. E 41, 43 (2018) 
+
+[3] ""
+S. Ferrari, E. Locatelli, E. Bianchi - in prep.
