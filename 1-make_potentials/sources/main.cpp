@@ -81,6 +81,7 @@ main(int argc, char* argv[])
   try {
     PotentialForLammps potential(
       inputFileName, symmetry, colloid, startFromContactValues);
+    potential.printRecapFile(outputDirName);
     potential.printLAMMPSpotentialsToFile(outputDirName);
     potential.printRadialPotentialsToFile(outputDirName);
     potential.printAngularPotentialsToFile(outputDirName);

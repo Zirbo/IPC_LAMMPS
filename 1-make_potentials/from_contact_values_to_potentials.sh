@@ -83,5 +83,5 @@ pushd sources
 
   [ $ipc_model -eq 1 ] && is_ipc="-p"
   ./compute.out -c $is_ipc -m $symmetry -i inputfile -o $target
-  mv inputfile ${target}/inputfile.dat
+  rm inputfile
 popd 
