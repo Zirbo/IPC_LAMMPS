@@ -340,20 +340,20 @@ PotentialForLammps::printRadialPotentialsToFile(
   std::string const& outputDirName)
 {
   // create output directory
-  const std::string dirName = outputDirName + "/lammpspot_radial_plots";
+  const std::string dirName = outputDirName + "/radial_plots";
   if (mkdir(dirName.c_str(), 0777) != 0)
     std::runtime_error(
       "Problem while creating the directory for radial potentials.");
 
   std::vector<std::string> plotOrientations;
   if (symmetry == Symmetry::JANUS) {
-    // E->quator, p->atch, C->backside with no patch
+    // E->quator, P->atch, B->ackside with no patch
     plotOrientations.push_back("EE");
     plotOrientations.push_back("EP");
-    plotOrientations.push_back("EC");
-    plotOrientations.push_back("PC");
+    plotOrientations.push_back("EB");
+    plotOrientations.push_back("PB");
     plotOrientations.push_back("PP");
-    plotOrientations.push_back("CC");
+    plotOrientations.push_back("BB");
   } else {
     plotOrientations.push_back("EE");
     plotOrientations.push_back("Ep1");
@@ -513,7 +513,7 @@ PotentialForLammps::printAngularPotentialsToFile(
   std::string const& outputDirName)
 {
   // create output directory
-  const std::string dirName = outputDirName + "/lammpspot_angular_plots";
+  const std::string dirName = outputDirName + "/angular_plots";
   if (mkdir(dirName.c_str(), 0777) != 0)
     std::runtime_error("Problem while creating the directory.");
 
@@ -525,13 +525,13 @@ PotentialForLammps::printAngularPotentialsToFile(
   };
   std::vector<Orientation> plotOrientations;
   if (symmetry == Symmetry::JANUS) {
-    plotOrientations.push_back({ "CC", 0, 180 });
-    plotOrientations.push_back({ "PP", 180, 0 });
-    plotOrientations.push_back({ "PC", 0, 0 });
+    plotOrientations.push_back({ "EE_EB_EE_EP_EE", 0, 180 });
+    plotOrientations.push_back({ "PP_PE_PB_PE_PP", 180, 0 });
+    plotOrientations.push_back({ "BB_BE_BP_BE_BB", 0, 0 });
   } else {
-    plotOrientations.push_back({ "EE", 90, 90 });
-    plotOrientations.push_back({ "P1P1", 180, 0 });
-    plotOrientations.push_back({ "P2P2", 0, 180 });
+    plotOrientations.push_back({ "EE_EP2_EE_EP1_EE", 90, 90 });
+    plotOrientations.push_back({ "P1P1_P1E_P1P2_P1E_P1P1", 180, 0 });
+    plotOrientations.push_back({ "P2P2_P2E_P2P1_P2E_P2P2", 0, 180 });
   }
 
   for (auto& type : plotOrientations) {
