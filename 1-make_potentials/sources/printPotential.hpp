@@ -25,6 +25,7 @@ public:
                      const Symmetry simmetry,
                      const Colloid colloid,
                      bool startFromContactValues);
+  void printRecapFile(std::string const& outputDirName);
   void printLAMMPSpotentialsToFile(std::string const& outputDirName);
   void printRadialPotentialsToFile(std::string const& outputDirName);
   void printAngularPotentialsToFile(std::string const& outputDirName);

@@ -9,7 +9,7 @@ int main ( int argc, char *argv[] ) {
     std::stringstream helpMessage;
     helpMessage << "Mandatory arguments:\n - trajectory file\n - inputfile\n - directory were the potentials are stored\n\n"
                 << "Optional arguments:\n - time step where to start from\n - time step where to end"
-                << "   (if not given, the program goes from start to finish)";
+                << "   (if not given, the program goes from start to finish)\n";
 
     IPCpostprocessInitializer initializer;
     if(argc == 4 || argc == 6) {

@@ -2,6 +2,7 @@
 
 mkdir -p bld
 pushd bld
-  cmake ..
+  cmake ../sources/
   make -j4
 popd
+cp bld/lammpsIPCpostprocess .
