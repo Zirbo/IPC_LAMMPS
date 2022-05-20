@@ -13,7 +13,6 @@ parser.add_argument('ecc1', metavar='e1', type=float, help='eccentricity of the 
 parser.add_argument('ecc2', metavar='e2', type=float, help='eccentricity of the second patch')
 args = parser.parse_args()
 
-outputFile = open('startingstate.txt','w')
 args.nOSPCsPlane = args.nOSPCsSide**2
 args.nOSPCs = args.nOSPCsSide**3
 args.side = (args.nOSPCs/args.density)**(1./3.)
@@ -21,10 +20,13 @@ args.sideStep = args.side/args.nOSPCsSide
 
 print(args)
 
+filename = "startingstate_SC_2p_{}_{}_{}_{}.txt".format(args.nOSPCs, args.density, args.ecc1, args.ecc2)
+outputFile = open(filename,'w')
+
 
 outputFile.write("# starting configuration for LAMMPS generated with a script available at\n")
 outputFile.write("# https://github.com/Zirbo/OSPC_LAMMPS")
-outputFile.write("\n")
+outputFile.write("\n# Simple Cubic 2-patch, DENSITY: {}, ecc1: {}, ecc2: {}\n".format(args.density, args.ecc1, args.ecc2))
 outputFile.write("\n" + str(3*args.nOSPCs).rjust(16) + " atoms")
 outputFile.write("\n" + str(2*args.nOSPCs).rjust(16) + " bonds")
 outputFile.write("\n" + str(  args.nOSPCs).rjust(16) + " angles")

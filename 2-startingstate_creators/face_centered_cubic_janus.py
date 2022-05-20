@@ -12,7 +12,6 @@ parser.add_argument('density', metavar='d', type=float, help='density')
 parser.add_argument('ecc', metavar='e', type=float, help='eccentricity off the OSPCs')
 args = parser.parse_args()
 
-outputFile = open('startingstate.txt','w')
 args.nOSPCsPlane = args.nOSPCsSide**2
 args.nOSPCsCube  = args.nOSPCsSide**3
 args.nOSPCs = 4*args.nOSPCsCube
@@ -20,6 +19,9 @@ args.side = (args.nOSPCs/args.density)**(1./3.)
 args.sideStep = args.side/args.nOSPCsSide
 
 print(args)
+
+filename = "startingstate_FCC_1p_{}_{}_{}.txt".format(args.nOSPCs, args.density, args.ecc)
+outputFile = open(filename,'w')
 
 lattice_roots=( (0.0, 0.0, 0.0, 0),
                 (0.5, 0.5, 0.0, 1),
@@ -30,7 +32,7 @@ lattice_roots=( (0.0, 0.0, 0.0, 0),
 
 outputFile.write("# starting configuration for LAMMPS generated with a script available at\n")
 outputFile.write("# https://github.com/Zirbo/OSPC_LAMMPS")
-outputFile.write("\n")
+outputFile.write("\n# FCC crystal 1-patch DENSITY: {}, ecc: {}\n".format(args.density, args.ecc))
 outputFile.write("\n" + str(2*args.nOSPCs).rjust(16) + " atoms")
 outputFile.write("\n" + str(1*args.nOSPCs).rjust(16) + " bonds")
 outputFile.write("\n")
