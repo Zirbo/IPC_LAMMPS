@@ -30,10 +30,11 @@ delta=0.2
 ecc1=0.22
 # patch radius
 rad1=0.38
-# contact values
-vEE=0.1
-vEP1=-1.0
-vP1P1=4.0
+
+# contact values -> the naming is referring to two patch systems.
+vEE=0.1     # for JANUS -> backside-backside
+vEP1=-1.0   # for JANUS -> backside-patch
+vP1P1=4.0   # for JANUS -> patch-patch
 
 
 
