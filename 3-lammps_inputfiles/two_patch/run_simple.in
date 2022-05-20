@@ -9,6 +9,8 @@ atom_style     full
 
 # read starting configuration
 read_data      startingstate.txt
+# if you want to restart a previous simulation, comment the line above
+# and uncomment read_restart below, and comment the equilibration phase
 #read_restart  restartingstate.new
 
 # interaction potential
@@ -24,16 +26,16 @@ pair_coeff     1 3 <path_to_potential>/Bs2.table Bs2
 pair_coeff     2 2 <path_to_potential>/s1s1.table s1s1
 pair_coeff     2 3 <path_to_potential>/s1s2.table s1s2
 pair_coeff     3 3 <path_to_potential>/s2s2.table s2s2
-bond_coeff     1 9999.9 0.22     # center-patch1 distance
-bond_coeff     2 9999.9 0.22     # center-patch2 distance
-angle_coeff    1 9999.9 180.0    # patch-patch angle
+bond_coeff     1 9999.9 <patch1_eccentricity>   # center-patch1 distance
+bond_coeff     2 9999.9 <patch1_eccentricity>   # center-patch2 distance
+angle_coeff    1 9999.9 180.0                   # patch-patch angle
 
 neighbor       0.3 bin
 neigh_modify   every 1 check yes
 
 # pe includes bond contributions, ignore it.
-variable       tot_pot   equal   3*epair
-thermo_style   custom step  temp v_tot_pot pe
+variable       total_pair_potential   equal   3*epair
+thermo_style   custom step  temp v_total_pair_potential pe
 log            outputFile.txt
 thermo         25000
 
