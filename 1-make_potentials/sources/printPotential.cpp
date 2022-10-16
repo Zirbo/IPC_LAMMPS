@@ -9,6 +9,9 @@
 #include <string>
 #include <vector>
 
+#include <Eigen/Dense>
+
+
 // #define DEBUG_ORIENT
 // #define DEBUG_MAIN
 
@@ -160,6 +163,20 @@ computeOmega(double Ra, double Rb, double rab)
 void
 PotentialForLammps::computeEpsilonsFromContactValues()
 {
+  bool noPPinEE =
+    (radius_p1 < .5*HSdiameter) && (radius_p2 < .5*HSdiameter);
+  bool noCPinEE = true;
+  bool noPPinEP = true;
+  if (noPPinEE && noCPinEE && noPPinEP) {
+    computeEpsilonsFromContactValuesReduced();
+  } else {
+    computeEpsilonsFromContactValuesGeneral();
+  }
+}
+
+void
+PotentialForLammps::computeEpsilonsFromContactValuesReduced()
+{
   e_min = 1.0;
 
   // overlap volumes at contact
@@ -200,6 +217,35 @@ PotentialForLammps::computeEpsilonsFromContactValues()
     e_s1s2 = (vP1P2 - vEE - fBs1 * e_Bs1 - fBs2 * e_Bs2) / fs1s2;
     e_s2s2 = (vP2P2 - vEE - 2. * fBs2 * e_Bs2) / fs2s2;
   }
+}
+
+void
+PotentialForLammps::computeEpsilonsFromContactValuesGeneral()
+{
+  e_min = 1.0;
+  // solve fe = V
+  Eigen::MatrixXd f(6,6);
+  f(0,0) = 0;
+  f(0,0) = 0;
+  f(0,0) = 0;
+  f(0,0) = 0;
+  f(0,0) = 0;
+  f(0,0) = 0;
+  f(0,0) = 0;
+  f(0,0) = 0;
+  f(0,0) = 0;
+
+  Eigen::VectorXd V(6);
+  V << 1,2,3,4,5,6;
+
+  auto e = f.colPivHouseholderQr().solve(V);
+
+  e_BB   = e[0];
+  e_Bs1  = e[1];
+  e_s1s1 = e[2];
+  e_Bs2  = e[3];
+  e_s1s2 = e[4];
+  e_s2s2 = e[5];
 }
 
 static double

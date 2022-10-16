@@ -73,7 +73,9 @@ pushd sources
   echo $epsP1P2 >> inputfile
   echo $epsP2P2 >> inputfile
 
-  g++ -std=c++11 printPotential.cpp main.cpp -o compute.out
+  if [ ! -x compute.out ]; then
+    ./build.sh
+  fi
 
   target="../target_${model_name}_${symmetry}_epsilons"
   [ -d $target ] && rm -rf $target
