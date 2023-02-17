@@ -166,7 +166,7 @@ PotentialForLammps::computeEpsilonsFromContactValues()
   bool noPPinEE =
     (radius_p1 < .5*HSdiameter) && (radius_p2 < .5*HSdiameter);
   bool noCPinEE = true;
-  bool noPPinEP = true;
+  bool noPPinEP = false;
   if (noPPinEE && noCPinEE && noPPinEP) {
     computeEpsilonsFromContactValuesReduced();
   } else {
@@ -223,23 +223,67 @@ void
 PotentialForLammps::computeEpsilonsFromContactValuesGeneral()
 {
   e_min = 1.0;
-  // solve fe = V
-  Eigen::MatrixXd f(6,6);
-  f(0,0) = 0;
-  f(0,0) = 0;
-  f(0,0) = 0;
-  f(0,0) = 0;
-  f(0,0) = 0;
-  f(0,0) = 0;
-  f(0,0) = 0;
-  f(0,0) = 0;
-  f(0,0) = 0;
 
   Eigen::VectorXd V(6);
-  V << 1,2,3,4,5,6;
+  V << vEE, vEP1, vEP2, vP1P1, vP1P2, vP2P2;
+  // sequence: BB Bs1 Bs2 s1s1 s1s2 s2s2
+  Eigen::MatrixXd f(6,6);
+  // = vEE
+  f(0,0) = computeOmega(colloidRadius, colloidRadius, dist(HSdiameter, 0));
+  f(0,1) = computeOmega(colloidRadius, radius_p1, dist(HSdiameter, eccentricity_p1)) * 2.;
+  f(0,2) = computeOmega(colloidRadius, radius_p2, dist(HSdiameter, eccentricity_p2)) * 2.;
+  f(0,3) = computeOmega(radius_p1, radius_p1, dist(HSdiameter, 0));
+  f(0,4) = computeOmega(radius_p1, radius_p2, dist(HSdiameter, eccentricity_p1 + eccentricity_p2)) * 2.;
+  f(0,5) = computeOmega(radius_p2, radius_p2, dist(HSdiameter, 0));
+  // = VEP1
+  f(1,0) = computeOmega(colloidRadius, colloidRadius, dist(HSdiameter, 0));
+  f(1,1) = computeOmega(colloidRadius, radius_p1, dist(HSdiameter - eccentricity_p1, 0)) + 
+        computeOmega(colloidRadius, radius_p1, dist(HSdiameter, eccentricity_p1));
+  f(1,2) = computeOmega(colloidRadius, radius_p2, dist(HSdiameter + eccentricity_p2, 0)) +
+        computeOmega(colloidRadius, radius_p2, dist(HSdiameter, -eccentricity_p2));;
+  f(1,3) = computeOmega(radius_p1, radius_p1, dist(HSdiameter - eccentricity_p1, eccentricity_p1));
+  f(1,4) = computeOmega(radius_p1, radius_p2, dist(HSdiameter + eccentricity_p2, eccentricity_p1)) +
+        computeOmega(radius_p1, radius_p2, dist(HSdiameter - eccentricity_p1, -eccentricity_p2));
+  f(1,5) = computeOmega(radius_p2, radius_p2, dist(HSdiameter + eccentricity_p2, -eccentricity_p2));
+  // = VEP2
+  f(2,0) = computeOmega(colloidRadius, colloidRadius, dist(HSdiameter, 0));
+  f(2,1) = computeOmega(colloidRadius, radius_p1, dist(HSdiameter + eccentricity_p1, 0)) + 
+        computeOmega(colloidRadius, radius_p1, dist(HSdiameter, eccentricity_p1));
+  f(2,2) = computeOmega(colloidRadius, radius_p2, dist(HSdiameter - eccentricity_p2, 0)) +
+        computeOmega(colloidRadius, radius_p2, dist(HSdiameter, eccentricity_p2));;
+  f(2,3) = computeOmega(radius_p1, radius_p1, dist(HSdiameter + eccentricity_p1, eccentricity_p1));
+  f(2,4) = computeOmega(radius_p1, radius_p2, dist(HSdiameter - eccentricity_p2, eccentricity_p1)) +
+        computeOmega(radius_p1, radius_p2, dist(HSdiameter + eccentricity_p1, -eccentricity_p2));
+  f(2,5) = computeOmega(radius_p2, radius_p2, dist(HSdiameter - eccentricity_p2, -eccentricity_p2));
+  // = VP1P1
+  f(3,0) = computeOmega(colloidRadius, colloidRadius, dist(HSdiameter, 0));
+  f(3,1) = computeOmega(colloidRadius, radius_p1, dist(HSdiameter - eccentricity_p1, 0)) * 2.;
+  f(3,2) = computeOmega(colloidRadius, radius_p2, dist(HSdiameter + eccentricity_p2, 0)) * 2.;
+  f(3,3) = computeOmega(radius_p1, radius_p1, dist(HSdiameter -2*eccentricity_p1, 0));
+  f(3,4) = computeOmega(radius_p1, radius_p2, dist(eccentricity_p2 + HSdiameter - eccentricity_p1, 0)) * 2.;
+  f(3,5) = computeOmega(radius_p2, radius_p2, dist(HSdiameter +2*eccentricity_p2, 0));
+  // = VP1P2
+  f(4,0) = computeOmega(colloidRadius, colloidRadius, dist(HSdiameter, 0));
+  f(4,1) = computeOmega(colloidRadius, radius_p1, dist(HSdiameter + eccentricity_p1, 0)) +
+        computeOmega(colloidRadius, radius_p1, dist(HSdiameter - eccentricity_p1, 0));
+  f(4,2) = computeOmega(colloidRadius, radius_p2, dist(HSdiameter + eccentricity_p2, 0)) +
+        computeOmega(colloidRadius, radius_p2, dist(HSdiameter - eccentricity_p2, 0));
+  f(4,3) = computeOmega(radius_p1, radius_p1, dist(HSdiameter, 0));
+  f(4,4) = computeOmega(radius_p1, radius_p2, dist(eccentricity_p1 + HSdiameter + eccentricity_p2, 0)) +
+        computeOmega(radius_p1, radius_p2, dist(HSdiameter - eccentricity_p1 - eccentricity_p2, 0));
+  f(4,5) = computeOmega(radius_p2, radius_p2, dist(HSdiameter, 0));
+  // = VP2P2
+  f(5,0) = computeOmega(colloidRadius, colloidRadius, dist(HSdiameter, 0));
+  f(5,1) = computeOmega(colloidRadius, radius_p1, dist(HSdiameter + eccentricity_p1, 0)) * 2.;
+  f(5,2) = computeOmega(colloidRadius, radius_p2, dist(HSdiameter - eccentricity_p2, 0)) * 2.;
+  f(5,3) = computeOmega(radius_p1, radius_p1, dist(HSdiameter +2*eccentricity_p1, 0));
+  f(5,4) = computeOmega(radius_p1, radius_p2, dist(eccentricity_p1 + HSdiameter - eccentricity_p2, 0)) * 2.;
+  f(5,5) = computeOmega(radius_p2, radius_p2, dist(HSdiameter -2*eccentricity_p2, 0));
 
+  // solve fe = V
   auto e = f.colPivHouseholderQr().solve(V);
 
+  // port solutions
   e_BB   = e[0];
   e_Bs1  = e[1];
   e_s1s1 = e[2];
@@ -536,22 +580,22 @@ PotentialForLammps::printRecapFile(std::string const& outputDirName)
     << "\n\nNORMALIZED EPSILON COEFFICIENTS:"
     << "\neps_BB   = " << e_BB / e_min << "\neps_Bs1  = " << e_Bs1 / e_min
     << "\neps_Bs2  = " << e_Bs2 / e_min << "\neps_s1s1 = " << e_s1s1 / e_min
-    << "\neps_s1s2 = " << e_s1s2 / e_min << "\neps_s2s2 = " << e_s2s2 / e_min
-    << "\n\nRESULTING CONTACT VALUES:";
-   if (symmetry == Symmetry::JANUS) {
-     recapFile << "\nback-back = " << (e_BB * fBB) / e_min
-       << "\nback-patch = " << (e_BB * fBB + fBs1 * e_Bs1) / e_min
-       << "\npatch-patch = " << (e_BB * fBB + 2*fBs1 * e_Bs1 + fs1s1 * e_s1s1) / e_min;
-   } else {
-     recapFile << "\nvEE = " << (e_BB * fBB) / e_min
-       << "\nvEP1 = " << (e_BB * fBB + fBs1 * e_Bs1) / e_min
-       << "\nvEP2 = " << (e_BB * fBB + fBs2 * e_Bs2) / e_min
-       << "\nvs1s1 = " << (e_BB * fBB + fBs1 * e_Bs1 + fBs1 * e_Bs1 + fs1s1 * e_s1s1) / e_min
-       << "\nvs1s2 = " << (e_BB * fBB + fBs1 * e_Bs1 + fBs2 * e_Bs2 + fs1s2 * e_s1s2) / e_min
-       << "\nvs2s2 = " << (e_BB * fBB + fBs2 * e_Bs2 + fBs2 * e_Bs2 + fs2s2 * e_s2s2) / e_min;
-   }
+    << "\neps_s1s2 = " << e_s1s2 / e_min << "\neps_s2s2 = " << e_s2s2 / e_min;
+  //recapFile << "\n\nRESULTING CONTACT VALUES:";
+  // if (symmetry == Symmetry::JANUS) {
+  //   recapFile << "\nback-back = " << (e_BB * fBB) / e_min
+  //     << "\nback-patch = " << (e_BB * fBB + fBs1 * e_Bs1) / e_min
+  //     << "\npatch-patch = " << (e_BB * fBB + 2*fBs1 * e_Bs1 + fs1s1 * e_s1s1) / e_min;
+  // } else {
+  //   recapFile << "\nvEE = " << (e_BB * fBB) / e_min
+  //     << "\nvEP1 = " << (e_BB * fBB + fBs1 * e_Bs1) / e_min
+  //     << "\nvEP2 = " << (e_BB * fBB + fBs2 * e_Bs2) / e_min
+  //     << "\nvs1s1 = " << (e_BB * fBB + fBs1 * e_Bs1 + fBs1 * e_Bs1 + fs1s1 * e_s1s1) / e_min
+  //     << "\nvs1s2 = " << (e_BB * fBB + fBs1 * e_Bs1 + fBs2 * e_Bs2 + fs1s2 * e_s1s2) / e_min
+  //     << "\nvs2s2 = " << (e_BB * fBB + fBs2 * e_Bs2 + fBs2 * e_Bs2 + fs2s2 * e_s2s2) / e_min;
+  // }
 
-   recapFile << "\n\nPlease double check that the INPUT VALUES match the OUTPUT VALUES."; 
+  recapFile << "\n\nPlease double check that the INPUT VALUES match the OUTPUT VALUES."; 
 }
 
 void
