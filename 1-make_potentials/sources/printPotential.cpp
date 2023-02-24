@@ -165,11 +165,19 @@ PotentialForLammps::computeEpsilonsFromContactValues()
 {
   bool noPPinEE =
     (radius_p1 < .5*HSdiameter) && (radius_p2 < .5*HSdiameter);
-  bool noCPinEE = true;
-  bool noPPinEP = false;
-  if (noPPinEE && noCPinEE && noPPinEP) {
+  bool noCPinEE =
+    (colloidRadius + radius_p1) < pow(HSdiameter, 2) + pow(radius_p2, 2)
+ && (colloidRadius + radius_p2) < pow(HSdiameter, 2) + pow(radius_p1, 2) ;
+  bool noPPinEP =
+    pow(radius_p1 + radius_p1, 2) < pow(HSdiameter - radius_p1, 2) + pow(radius_p1, 2)
+ && pow(radius_p1 + radius_p2, 2) < pow(HSdiameter - radius_p1, 2) + pow(radius_p2, 2)
+ && pow(radius_p2 + radius_p1, 2) < pow(HSdiameter - radius_p2, 2) + pow(radius_p1, 2)
+ && pow(radius_p2 + radius_p2, 2) < pow(HSdiameter - radius_p2, 2) + pow(radius_p2, 2);
+  if (noPPinEE && noCPinEE && noPPinEP && !true) {
+    std::cout << "Using the reduced solution\n";
     computeEpsilonsFromContactValuesReduced();
   } else {
+    std::cout << "Using the general solution\n";
     computeEpsilonsFromContactValuesGeneral();
   }
 }
@@ -219,75 +227,85 @@ PotentialForLammps::computeEpsilonsFromContactValuesReduced()
   }
 }
 
+static double real_dist(double x, double y)
+{
+  return std::sqrt(x * x + y * y);
+}
+
 void
 PotentialForLammps::computeEpsilonsFromContactValuesGeneral()
 {
   e_min = 1.0;
+  if (computeOmega(colloidRadius, colloidRadius, HSdiameter) == 0.) {
+    std::cout << "WARNING: fBB is zero. Did you set delta to zero?\n"
+              << "Overriding e_BB and vEE to also be zero\n\n";
+  }
 
   Eigen::VectorXd V(6);
   V << vEE, vEP1, vEP2, vP1P1, vP1P2, vP2P2;
   // sequence: BB Bs1 Bs2 s1s1 s1s2 s2s2
   Eigen::MatrixXd f(6,6);
   // = vEE
-  f(0,0) = computeOmega(colloidRadius, colloidRadius, dist(HSdiameter, 0));
-  f(0,1) = computeOmega(colloidRadius, radius_p1, dist(HSdiameter, eccentricity_p1)) * 2.;
-  f(0,2) = computeOmega(colloidRadius, radius_p2, dist(HSdiameter, eccentricity_p2)) * 2.;
-  f(0,3) = computeOmega(radius_p1, radius_p1, dist(HSdiameter, 0));
-  f(0,4) = computeOmega(radius_p1, radius_p2, dist(HSdiameter, eccentricity_p1 + eccentricity_p2)) * 2.;
-  f(0,5) = computeOmega(radius_p2, radius_p2, dist(HSdiameter, 0));
+  f(0,0) = computeOmega(colloidRadius, colloidRadius, real_dist(HSdiameter, 0));
+  f(0,1) = computeOmega(colloidRadius, radius_p1, real_dist(HSdiameter, eccentricity_p1)) * 2.;
+  f(0,2) = computeOmega(colloidRadius, radius_p2, real_dist(HSdiameter, eccentricity_p2)) * 2.;
+  f(0,3) = computeOmega(radius_p1, radius_p1, real_dist(HSdiameter, 0));
+  f(0,4) = computeOmega(radius_p1, radius_p2, real_dist(HSdiameter, eccentricity_p1 + eccentricity_p2)) * 2.;
+  f(0,5) = computeOmega(radius_p2, radius_p2, real_dist(HSdiameter, 0));
   // = VEP1
-  f(1,0) = computeOmega(colloidRadius, colloidRadius, dist(HSdiameter, 0));
-  f(1,1) = computeOmega(colloidRadius, radius_p1, dist(HSdiameter - eccentricity_p1, 0)) + 
-        computeOmega(colloidRadius, radius_p1, dist(HSdiameter, eccentricity_p1));
-  f(1,2) = computeOmega(colloidRadius, radius_p2, dist(HSdiameter + eccentricity_p2, 0)) +
-        computeOmega(colloidRadius, radius_p2, dist(HSdiameter, -eccentricity_p2));;
-  f(1,3) = computeOmega(radius_p1, radius_p1, dist(HSdiameter - eccentricity_p1, eccentricity_p1));
-  f(1,4) = computeOmega(radius_p1, radius_p2, dist(HSdiameter + eccentricity_p2, eccentricity_p1)) +
-        computeOmega(radius_p1, radius_p2, dist(HSdiameter - eccentricity_p1, -eccentricity_p2));
-  f(1,5) = computeOmega(radius_p2, radius_p2, dist(HSdiameter + eccentricity_p2, -eccentricity_p2));
+  f(1,0) = computeOmega(colloidRadius, colloidRadius, real_dist(HSdiameter, 0));
+  f(1,1) = computeOmega(colloidRadius, radius_p1, real_dist(HSdiameter - eccentricity_p1, 0))
+         + computeOmega(colloidRadius, radius_p1, real_dist(HSdiameter, eccentricity_p1));
+  f(1,2) = computeOmega(colloidRadius, radius_p2, real_dist(HSdiameter + eccentricity_p2, 0))
+         + computeOmega(colloidRadius, radius_p2, real_dist(HSdiameter, -eccentricity_p2));;
+  f(1,3) = computeOmega(radius_p1, radius_p1, real_dist(HSdiameter - eccentricity_p1, eccentricity_p1));
+  f(1,4) = computeOmega(radius_p1, radius_p2, real_dist(HSdiameter + eccentricity_p2, eccentricity_p1))
+         + computeOmega(radius_p1, radius_p2, real_dist(HSdiameter - eccentricity_p1, -eccentricity_p2));
+  f(1,5) = computeOmega(radius_p2, radius_p2, real_dist(HSdiameter + eccentricity_p2, -eccentricity_p2));
   // = VEP2
-  f(2,0) = computeOmega(colloidRadius, colloidRadius, dist(HSdiameter, 0));
-  f(2,1) = computeOmega(colloidRadius, radius_p1, dist(HSdiameter + eccentricity_p1, 0)) + 
-        computeOmega(colloidRadius, radius_p1, dist(HSdiameter, eccentricity_p1));
-  f(2,2) = computeOmega(colloidRadius, radius_p2, dist(HSdiameter - eccentricity_p2, 0)) +
-        computeOmega(colloidRadius, radius_p2, dist(HSdiameter, eccentricity_p2));;
-  f(2,3) = computeOmega(radius_p1, radius_p1, dist(HSdiameter + eccentricity_p1, eccentricity_p1));
-  f(2,4) = computeOmega(radius_p1, radius_p2, dist(HSdiameter - eccentricity_p2, eccentricity_p1)) +
-        computeOmega(radius_p1, radius_p2, dist(HSdiameter + eccentricity_p1, -eccentricity_p2));
-  f(2,5) = computeOmega(radius_p2, radius_p2, dist(HSdiameter - eccentricity_p2, -eccentricity_p2));
+  f(2,0) = computeOmega(colloidRadius, colloidRadius, real_dist(HSdiameter, 0));
+  f(2,1) = computeOmega(colloidRadius, radius_p1, real_dist(HSdiameter + eccentricity_p1, 0))
+         + computeOmega(colloidRadius, radius_p1, real_dist(HSdiameter, eccentricity_p1));
+  f(2,2) = computeOmega(colloidRadius, radius_p2, real_dist(HSdiameter - eccentricity_p2, 0))
+         + computeOmega(colloidRadius, radius_p2, real_dist(HSdiameter, eccentricity_p2));;
+  f(2,3) = computeOmega(radius_p1, radius_p1, real_dist(HSdiameter + eccentricity_p1, eccentricity_p1));
+  f(2,4) = computeOmega(radius_p1, radius_p2, real_dist(HSdiameter - eccentricity_p2, eccentricity_p1))
+         + computeOmega(radius_p1, radius_p2, real_dist(HSdiameter + eccentricity_p1, -eccentricity_p2));
+  f(2,5) = computeOmega(radius_p2, radius_p2, real_dist(HSdiameter - eccentricity_p2, -eccentricity_p2));
   // = VP1P1
-  f(3,0) = computeOmega(colloidRadius, colloidRadius, dist(HSdiameter, 0));
-  f(3,1) = computeOmega(colloidRadius, radius_p1, dist(HSdiameter - eccentricity_p1, 0)) * 2.;
-  f(3,2) = computeOmega(colloidRadius, radius_p2, dist(HSdiameter + eccentricity_p2, 0)) * 2.;
-  f(3,3) = computeOmega(radius_p1, radius_p1, dist(HSdiameter -2*eccentricity_p1, 0));
-  f(3,4) = computeOmega(radius_p1, radius_p2, dist(eccentricity_p2 + HSdiameter - eccentricity_p1, 0)) * 2.;
-  f(3,5) = computeOmega(radius_p2, radius_p2, dist(HSdiameter +2*eccentricity_p2, 0));
+  f(3,0) = computeOmega(colloidRadius, colloidRadius, real_dist(HSdiameter, 0));
+  f(3,1) = computeOmega(colloidRadius, radius_p1, real_dist(HSdiameter - eccentricity_p1, 0)) * 2.;
+  f(3,2) = computeOmega(colloidRadius, radius_p2, real_dist(HSdiameter + eccentricity_p2, 0)) * 2.;
+  f(3,3) = computeOmega(radius_p1, radius_p1, real_dist(HSdiameter -2*eccentricity_p1, 0));
+  f(3,4) = computeOmega(radius_p1, radius_p2, real_dist(eccentricity_p2 + HSdiameter - eccentricity_p1, 0)) * 2.;
+  f(3,5) = computeOmega(radius_p2, radius_p2, real_dist(HSdiameter +2*eccentricity_p2, 0));
   // = VP1P2
-  f(4,0) = computeOmega(colloidRadius, colloidRadius, dist(HSdiameter, 0));
-  f(4,1) = computeOmega(colloidRadius, radius_p1, dist(HSdiameter + eccentricity_p1, 0)) +
-        computeOmega(colloidRadius, radius_p1, dist(HSdiameter - eccentricity_p1, 0));
-  f(4,2) = computeOmega(colloidRadius, radius_p2, dist(HSdiameter + eccentricity_p2, 0)) +
-        computeOmega(colloidRadius, radius_p2, dist(HSdiameter - eccentricity_p2, 0));
-  f(4,3) = computeOmega(radius_p1, radius_p1, dist(HSdiameter, 0));
-  f(4,4) = computeOmega(radius_p1, radius_p2, dist(eccentricity_p1 + HSdiameter + eccentricity_p2, 0)) +
-        computeOmega(radius_p1, radius_p2, dist(HSdiameter - eccentricity_p1 - eccentricity_p2, 0));
-  f(4,5) = computeOmega(radius_p2, radius_p2, dist(HSdiameter, 0));
+  f(4,0) = computeOmega(colloidRadius, colloidRadius, real_dist(HSdiameter, 0));
+  f(4,1) = computeOmega(colloidRadius, radius_p1, real_dist(HSdiameter + eccentricity_p1, 0))
+         + computeOmega(colloidRadius, radius_p1, real_dist(HSdiameter - eccentricity_p1, 0));
+  f(4,2) = computeOmega(colloidRadius, radius_p2, real_dist(HSdiameter + eccentricity_p2, 0))
+         + computeOmega(colloidRadius, radius_p2, real_dist(HSdiameter - eccentricity_p2, 0));
+  f(4,3) = computeOmega(radius_p1, radius_p1, real_dist(HSdiameter, 0));
+  f(4,4) = computeOmega(radius_p1, radius_p2, real_dist(eccentricity_p1 + HSdiameter + eccentricity_p2, 0))
+         + computeOmega(radius_p1, radius_p2, real_dist(HSdiameter - eccentricity_p1 - eccentricity_p2, 0));
+  f(4,5) = computeOmega(radius_p2, radius_p2, real_dist(HSdiameter, 0));
   // = VP2P2
-  f(5,0) = computeOmega(colloidRadius, colloidRadius, dist(HSdiameter, 0));
-  f(5,1) = computeOmega(colloidRadius, radius_p1, dist(HSdiameter + eccentricity_p1, 0)) * 2.;
-  f(5,2) = computeOmega(colloidRadius, radius_p2, dist(HSdiameter - eccentricity_p2, 0)) * 2.;
-  f(5,3) = computeOmega(radius_p1, radius_p1, dist(HSdiameter +2*eccentricity_p1, 0));
-  f(5,4) = computeOmega(radius_p1, radius_p2, dist(eccentricity_p1 + HSdiameter - eccentricity_p2, 0)) * 2.;
-  f(5,5) = computeOmega(radius_p2, radius_p2, dist(HSdiameter -2*eccentricity_p2, 0));
+  f(5,0) = computeOmega(colloidRadius, colloidRadius, real_dist(HSdiameter, 0));
+  f(5,1) = computeOmega(colloidRadius, radius_p1, real_dist(HSdiameter + eccentricity_p1, 0)) * 2.;
+  f(5,2) = computeOmega(colloidRadius, radius_p2, real_dist(HSdiameter - eccentricity_p2, 0)) * 2.;
+  f(5,3) = computeOmega(radius_p1, radius_p1, real_dist(HSdiameter +2*eccentricity_p1, 0));
+  f(5,4) = computeOmega(radius_p1, radius_p2, real_dist(eccentricity_p1 + HSdiameter - eccentricity_p2, 0)) * 2.;
+  f(5,5) = computeOmega(radius_p2, radius_p2, real_dist(HSdiameter -2*eccentricity_p2, 0));
 
   // solve fe = V
-  auto e = f.colPivHouseholderQr().solve(V);
+  Eigen::VectorXd e(6);
+  e = f.colPivHouseholderQr().solve(V);
 
   // port solutions
   e_BB   = e[0];
   e_Bs1  = e[1];
-  e_s1s1 = e[2];
-  e_Bs2  = e[3];
+  e_Bs2  = e[2];
+  e_s1s1 = e[3];
   e_s1s2 = e[4];
   e_s2s2 = e[5];
 }
@@ -554,17 +572,17 @@ PotentialForLammps::printRecapFile(std::string const& outputDirName)
   }
 
   // overlap volumes at contact
-  double fBB = computeOmega(colloidRadius, colloidRadius, HSdiameter);
-  double fBs1 =
-    computeOmega(colloidRadius, radius_p1, HSdiameter - eccentricity_p1);
-  double fs1s1 =
-    computeOmega(radius_p1, radius_p1, HSdiameter - 2. * eccentricity_p1);
-  double fBs2 =
-    computeOmega(colloidRadius, radius_p2, HSdiameter - eccentricity_p2);
-  double fs1s2 = computeOmega(
-    radius_p1, radius_p2, HSdiameter - eccentricity_p1 - eccentricity_p2);
-  double fs2s2 =
-    computeOmega(radius_p2, radius_p2, HSdiameter - 2. * eccentricity_p2);
+  //double fBB = computeOmega(colloidRadius, colloidRadius, HSdiameter);
+  //double fBs1 =
+  //  computeOmega(colloidRadius, radius_p1, HSdiameter - eccentricity_p1);
+  //double fs1s1 =
+  //  computeOmega(radius_p1, radius_p1, HSdiameter - 2. * eccentricity_p1);
+  //double fBs2 =
+  //  computeOmega(colloidRadius, radius_p2, HSdiameter - eccentricity_p2);
+  //double fs1s2 = computeOmega(
+  //  radius_p1, radius_p2, HSdiameter - eccentricity_p1 - eccentricity_p2);
+  //double fs2s2 =
+  //  computeOmega(radius_p2, radius_p2, HSdiameter - 2. * eccentricity_p2);
 
   recapFile << "\n\n\nOUTPUT VALUES:\n\n"
 #ifdef DEBUG_MAIN
