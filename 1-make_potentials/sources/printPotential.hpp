@@ -32,6 +32,7 @@ public:
 
 private:
   Symmetry symmetry;
+  bool reducedMode;
   // epsilons
   double e_BB, e_Bs1, e_Bs2, e_s1s1, e_s1s2, e_s2s2, e_min;
   // contact values

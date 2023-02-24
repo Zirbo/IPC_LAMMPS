@@ -166,18 +166,18 @@ PotentialForLammps::computeEpsilonsFromContactValues()
   bool noPPinEE =
     (radius_p1 < .5*HSdiameter) && (radius_p2 < .5*HSdiameter);
   bool noCPinEE =
-    (colloidRadius + radius_p1) < pow(HSdiameter, 2) + pow(radius_p2, 2)
- && (colloidRadius + radius_p2) < pow(HSdiameter, 2) + pow(radius_p1, 2) ;
+    pow(colloidRadius + radius_p1, 2) < pow(HSdiameter, 2) + pow(eccentricity_p2, 2)
+ && pow(colloidRadius + radius_p2, 2) < pow(HSdiameter, 2) + pow(eccentricity_p1, 2) ;
   bool noPPinEP =
-    pow(radius_p1 + radius_p1, 2) < pow(HSdiameter - radius_p1, 2) + pow(radius_p1, 2)
- && pow(radius_p1 + radius_p2, 2) < pow(HSdiameter - radius_p1, 2) + pow(radius_p2, 2)
- && pow(radius_p2 + radius_p1, 2) < pow(HSdiameter - radius_p2, 2) + pow(radius_p1, 2)
- && pow(radius_p2 + radius_p2, 2) < pow(HSdiameter - radius_p2, 2) + pow(radius_p2, 2);
-  if (noPPinEE && noCPinEE && noPPinEP && !true) {
-    std::cout << "Using the reduced solution\n";
+    pow(radius_p1 + radius_p1, 2) < pow(HSdiameter - eccentricity_p1, 2) + pow(eccentricity_p1, 2)
+ && pow(radius_p1 + radius_p2, 2) < pow(HSdiameter - eccentricity_p1, 2) + pow(eccentricity_p2, 2)
+ && pow(radius_p2 + radius_p1, 2) < pow(HSdiameter - eccentricity_p2, 2) + pow(eccentricity_p1, 2)
+ && pow(radius_p2 + radius_p2, 2) < pow(HSdiameter - eccentricity_p2, 2) + pow(eccentricity_p2, 2);
+  reducedMode = noPPinEE && noCPinEE && noPPinEP;
+  reducedMode &= false;
+  if (reducedMode) {
     computeEpsilonsFromContactValuesReduced();
   } else {
-    std::cout << "Using the general solution\n";
     computeEpsilonsFromContactValuesGeneral();
   }
 }
@@ -241,6 +241,14 @@ PotentialForLammps::computeEpsilonsFromContactValuesGeneral()
               << "Overriding e_BB and vEE to also be zero\n\n";
   }
 
+  if (symmetry == Symmetry::JANUS) {
+    throw std::runtime_error("General case not implemented for Janus");
+  } else if (symmetry == Symmetry::SYMMETRIC) {
+    vEP2 = vEP1;
+    vP1P2 = vP1P1;
+    vP2P2 = vP1P1;
+  }
+
   Eigen::VectorXd V(6);
   V << vEE, vEP1, vEP2, vP1P1, vP1P2, vP2P2;
   // sequence: BB Bs1 Bs2 s1s1 s1s2 s2s2
@@ -299,7 +307,8 @@ PotentialForLammps::computeEpsilonsFromContactValuesGeneral()
 
   // solve fe = V
   Eigen::VectorXd e(6);
-  e = f.colPivHouseholderQr().solve(V);
+  //e = f.colPivHouseholderQr().solve(V);
+  e = f.completeOrthogonalDecomposition().solve(V);
 
   // port solutions
   e_BB   = e[0];
@@ -569,6 +578,12 @@ PotentialForLammps::printRecapFile(std::string const& outputDirName)
       << "\nvEP2: " << vEP2
       << "\nvP1P2: " << vP1P2
       << "\nvP2P2: " << vP2P2;
+  }
+
+  if (reducedMode) {
+    std::cout << "Solved using the reduced solution\n";
+  } else {
+    std::cout << "Solved using the general solution\n";
   }
 
   // overlap volumes at contact
