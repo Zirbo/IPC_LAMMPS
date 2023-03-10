@@ -75,7 +75,9 @@ pushd sources
   echo $vP1P2 >> inputfile
   echo $vP2P2 >> inputfile
 
-  g++ -std=c++11 printPotential.cpp main.cpp -o compute.out
+  if [ ! -x compute.out ]; then
+    ./build.sh
+  fi
 
   target="../target_${model_name}_${symmetry}_contact"
   [ -d $target ] && rm -rf $target

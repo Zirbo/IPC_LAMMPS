@@ -9,6 +9,9 @@
 #include <string>
 #include <vector>
 
+#include <Eigen/Dense>
+
+
 // #define DEBUG_ORIENT
 // #define DEBUG_MAIN
 
@@ -160,6 +163,28 @@ computeOmega(double Ra, double Rb, double rab)
 void
 PotentialForLammps::computeEpsilonsFromContactValues()
 {
+  bool noPPinEE =
+    (radius_p1 < .5*HSdiameter) && (radius_p2 < .5*HSdiameter);
+  bool noCPinEE =
+    pow(colloidRadius + radius_p1, 2) < pow(HSdiameter, 2) + pow(eccentricity_p2, 2)
+ && pow(colloidRadius + radius_p2, 2) < pow(HSdiameter, 2) + pow(eccentricity_p1, 2) ;
+  bool noPPinEP =
+    pow(radius_p1 + radius_p1, 2) < pow(HSdiameter - eccentricity_p1, 2) + pow(eccentricity_p1, 2)
+ && pow(radius_p1 + radius_p2, 2) < pow(HSdiameter - eccentricity_p1, 2) + pow(eccentricity_p2, 2)
+ && pow(radius_p2 + radius_p1, 2) < pow(HSdiameter - eccentricity_p2, 2) + pow(eccentricity_p1, 2)
+ && pow(radius_p2 + radius_p2, 2) < pow(HSdiameter - eccentricity_p2, 2) + pow(eccentricity_p2, 2);
+  reducedMode = noPPinEE && noCPinEE && noPPinEP;
+  reducedMode &= false;
+  if (reducedMode) {
+    computeEpsilonsFromContactValuesReduced();
+  } else {
+    computeEpsilonsFromContactValuesGeneral();
+  }
+}
+
+void
+PotentialForLammps::computeEpsilonsFromContactValuesReduced()
+{
   e_min = 1.0;
 
   // overlap volumes at contact
@@ -200,6 +225,98 @@ PotentialForLammps::computeEpsilonsFromContactValues()
     e_s1s2 = (vP1P2 - vEE - fBs1 * e_Bs1 - fBs2 * e_Bs2) / fs1s2;
     e_s2s2 = (vP2P2 - vEE - 2. * fBs2 * e_Bs2) / fs2s2;
   }
+}
+
+static double real_dist(double x, double y)
+{
+  return std::sqrt(x * x + y * y);
+}
+
+void
+PotentialForLammps::computeEpsilonsFromContactValuesGeneral()
+{
+  e_min = 1.0;
+  if (computeOmega(colloidRadius, colloidRadius, HSdiameter) == 0.) {
+    std::cout << "WARNING: fBB is zero. Did you set delta to zero?\n"
+              << "Overriding e_BB and vEE to also be zero\n\n";
+  }
+
+  if (symmetry == Symmetry::JANUS) {
+    throw std::runtime_error("General case not implemented for Janus");
+  } else if (symmetry == Symmetry::SYMMETRIC) {
+    vEP2 = vEP1;
+    vP1P2 = vP1P1;
+    vP2P2 = vP1P1;
+  }
+
+  Eigen::VectorXd V(6);
+  V << vEE, vEP1, vEP2, vP1P1, vP1P2, vP2P2;
+  // sequence: BB Bs1 Bs2 s1s1 s1s2 s2s2
+  Eigen::MatrixXd f(6,6);
+  // = vEE
+  f(0,0) = computeOmega(colloidRadius, colloidRadius, real_dist(HSdiameter, 0));
+  f(0,1) = computeOmega(colloidRadius, radius_p1, real_dist(HSdiameter, eccentricity_p1)) * 2.;
+  f(0,2) = computeOmega(colloidRadius, radius_p2, real_dist(HSdiameter, eccentricity_p2)) * 2.;
+  f(0,3) = computeOmega(radius_p1, radius_p1, real_dist(HSdiameter, 0));
+  f(0,4) = computeOmega(radius_p1, radius_p2, real_dist(HSdiameter, eccentricity_p1 + eccentricity_p2)) * 2.;
+  f(0,5) = computeOmega(radius_p2, radius_p2, real_dist(HSdiameter, 0));
+  // = VEP1
+  f(1,0) = computeOmega(colloidRadius, colloidRadius, real_dist(HSdiameter, 0));
+  f(1,1) = computeOmega(colloidRadius, radius_p1, real_dist(HSdiameter - eccentricity_p1, 0))
+         + computeOmega(colloidRadius, radius_p1, real_dist(HSdiameter, eccentricity_p1));
+  f(1,2) = computeOmega(colloidRadius, radius_p2, real_dist(HSdiameter + eccentricity_p2, 0))
+         + computeOmega(colloidRadius, radius_p2, real_dist(HSdiameter, -eccentricity_p2));;
+  f(1,3) = computeOmega(radius_p1, radius_p1, real_dist(HSdiameter - eccentricity_p1, eccentricity_p1));
+  f(1,4) = computeOmega(radius_p1, radius_p2, real_dist(HSdiameter + eccentricity_p2, eccentricity_p1))
+         + computeOmega(radius_p1, radius_p2, real_dist(HSdiameter - eccentricity_p1, -eccentricity_p2));
+  f(1,5) = computeOmega(radius_p2, radius_p2, real_dist(HSdiameter + eccentricity_p2, -eccentricity_p2));
+  // = VEP2
+  f(2,0) = computeOmega(colloidRadius, colloidRadius, real_dist(HSdiameter, 0));
+  f(2,1) = computeOmega(colloidRadius, radius_p1, real_dist(HSdiameter + eccentricity_p1, 0))
+         + computeOmega(colloidRadius, radius_p1, real_dist(HSdiameter, eccentricity_p1));
+  f(2,2) = computeOmega(colloidRadius, radius_p2, real_dist(HSdiameter - eccentricity_p2, 0))
+         + computeOmega(colloidRadius, radius_p2, real_dist(HSdiameter, eccentricity_p2));;
+  f(2,3) = computeOmega(radius_p1, radius_p1, real_dist(HSdiameter + eccentricity_p1, eccentricity_p1));
+  f(2,4) = computeOmega(radius_p1, radius_p2, real_dist(HSdiameter - eccentricity_p2, eccentricity_p1))
+         + computeOmega(radius_p1, radius_p2, real_dist(HSdiameter + eccentricity_p1, -eccentricity_p2));
+  f(2,5) = computeOmega(radius_p2, radius_p2, real_dist(HSdiameter - eccentricity_p2, -eccentricity_p2));
+  // = VP1P1
+  f(3,0) = computeOmega(colloidRadius, colloidRadius, real_dist(HSdiameter, 0));
+  f(3,1) = computeOmega(colloidRadius, radius_p1, real_dist(HSdiameter - eccentricity_p1, 0)) * 2.;
+  f(3,2) = computeOmega(colloidRadius, radius_p2, real_dist(HSdiameter + eccentricity_p2, 0)) * 2.;
+  f(3,3) = computeOmega(radius_p1, radius_p1, real_dist(HSdiameter -2*eccentricity_p1, 0));
+  f(3,4) = computeOmega(radius_p1, radius_p2, real_dist(eccentricity_p2 + HSdiameter - eccentricity_p1, 0)) * 2.;
+  f(3,5) = computeOmega(radius_p2, radius_p2, real_dist(HSdiameter +2*eccentricity_p2, 0));
+  // = VP1P2
+  f(4,0) = computeOmega(colloidRadius, colloidRadius, real_dist(HSdiameter, 0));
+  f(4,1) = computeOmega(colloidRadius, radius_p1, real_dist(HSdiameter + eccentricity_p1, 0))
+         + computeOmega(colloidRadius, radius_p1, real_dist(HSdiameter - eccentricity_p1, 0));
+  f(4,2) = computeOmega(colloidRadius, radius_p2, real_dist(HSdiameter + eccentricity_p2, 0))
+         + computeOmega(colloidRadius, radius_p2, real_dist(HSdiameter - eccentricity_p2, 0));
+  f(4,3) = computeOmega(radius_p1, radius_p1, real_dist(HSdiameter, 0));
+  f(4,4) = computeOmega(radius_p1, radius_p2, real_dist(eccentricity_p1 + HSdiameter + eccentricity_p2, 0))
+         + computeOmega(radius_p1, radius_p2, real_dist(HSdiameter - eccentricity_p1 - eccentricity_p2, 0));
+  f(4,5) = computeOmega(radius_p2, radius_p2, real_dist(HSdiameter, 0));
+  // = VP2P2
+  f(5,0) = computeOmega(colloidRadius, colloidRadius, real_dist(HSdiameter, 0));
+  f(5,1) = computeOmega(colloidRadius, radius_p1, real_dist(HSdiameter + eccentricity_p1, 0)) * 2.;
+  f(5,2) = computeOmega(colloidRadius, radius_p2, real_dist(HSdiameter - eccentricity_p2, 0)) * 2.;
+  f(5,3) = computeOmega(radius_p1, radius_p1, real_dist(HSdiameter +2*eccentricity_p1, 0));
+  f(5,4) = computeOmega(radius_p1, radius_p2, real_dist(eccentricity_p1 + HSdiameter - eccentricity_p2, 0)) * 2.;
+  f(5,5) = computeOmega(radius_p2, radius_p2, real_dist(HSdiameter -2*eccentricity_p2, 0));
+
+  // solve fe = V
+  Eigen::VectorXd e(6);
+  //e = f.colPivHouseholderQr().solve(V);
+  e = f.completeOrthogonalDecomposition().solve(V);
+
+  // port solutions
+  e_BB   = e[0];
+  e_Bs1  = e[1];
+  e_Bs2  = e[2];
+  e_s1s1 = e[3];
+  e_s1s2 = e[4];
+  e_s2s2 = e[5];
 }
 
 static double
@@ -335,6 +452,25 @@ PotentialForLammps::printLAMMPSpotentialsToFile(
   }
 }
 
+size_t
+PotentialForLammps::dist(double x, double y)
+{
+  double distance = std::sqrt(x * x + y * y);
+  // std::cout << "dist = (" << x << ", " << y << ")\n";
+  size_t distanceTab = size_t(distance / samplingStep);
+  if (distanceTab > uHS.size()) {
+    return 0;
+  }
+  return distanceTab;
+}
+
+static double ppot(const std::vector<double>& pot, size_t dist) {
+  if (dist >= pot.size() || dist == 0) {
+    return 0.;
+  }
+  return pot[dist];
+}
+
 void
 PotentialForLammps::printRadialPotentialsToFile(
   std::string const& outputDirName)
@@ -364,6 +500,7 @@ PotentialForLammps::printRadialPotentialsToFile(
   }
 
   for (int type = 0; type < plotOrientations.size(); ++type) {
+    bool saved = false;
     // create the output file
     std::string fileName = dirName + '/' + plotOrientations[type] + ".dat";
     std::ofstream potentialOutputFile(fileName);
@@ -371,49 +508,88 @@ PotentialForLammps::printRadialPotentialsToFile(
 
     for (double r = HSdiameter; r < interactionRange; r += 0.001) {
       potentialOutputFile << r << '\t';
-
-      size_t iBB = size_t(r / samplingStep);
-      size_t iBs1 = size_t((r - eccentricity_p1) / samplingStep);
-      size_t iBs2 = size_t((r - eccentricity_p2) / samplingStep);
-      // compute potential depending on type and cutoff
-      double printPotential;
+      size_t iCC, iCp1, iCp2, ip1p1, ip1C, ip1p2, ip2p1, ip2C, ip2p2;
+      iCC = dist(r, 0);
       if (type == 0) {
-        printPotential = uHS[iBB] + uBB[iBB];
+        iCp1  = dist(r, eccentricity_p1);
+        iCp2  = dist(r, eccentricity_p2);
+        ip1p1 = dist(r, 0);
+        ip1C  = dist(r, eccentricity_p1);
+        ip1p2 = dist(r, eccentricity_p1 + eccentricity_p2);
+        ip2p1 = dist(r, eccentricity_p1 + eccentricity_p2);
+        ip2C  = dist(r, eccentricity_p2);
+        ip2p2 = dist(r, 0);
       } else if (type == 1) {
-        printPotential = uHS[iBB] + uBB[iBB] + uBs1[iBs1];
+        iCp1  = dist(r - eccentricity_p1, 0);
+        iCp2  = dist(r + eccentricity_p2, 0);
+        ip1p1 = dist(r - eccentricity_p1, eccentricity_p1);
+        ip1C  = dist(r, eccentricity_p1);
+        ip1p2 = dist(r + eccentricity_p2, eccentricity_p1);
+        ip2p1 = dist(r - eccentricity_p1, -eccentricity_p2);
+        ip2C  = dist(r, -eccentricity_p2);
+        ip2p2 = dist(r + eccentricity_p2, -eccentricity_p2);
       } else if (type == 2) {
-        printPotential = uHS[iBB] + uBB[iBB] + uBs2[iBs2];
+        iCp1  = dist(r + eccentricity_p1, 0);
+        iCp2  = dist(r - eccentricity_p2, 0);
+        ip1p1 = dist(r + eccentricity_p1, eccentricity_p1);
+        ip1C  = dist(r, eccentricity_p1);
+        ip1p2 = dist(r - eccentricity_p2, eccentricity_p1);
+        ip2p1 = dist(r + eccentricity_p1, -eccentricity_p2);
+        ip2C  = dist(r, -eccentricity_p2);
+        ip2p2 = dist(r - eccentricity_p2, -eccentricity_p2);
       } else if (type == 3) {
-        size_t is1s2 =
-          size_t((r - eccentricity_p1 - eccentricity_p2) / samplingStep);
-        printPotential =
-          uHS[iBB] + uBB[iBB] + uBs1[iBs1] + uBs2[iBs2] + us1s2[is1s2];
+        iCp1  = dist(r + eccentricity_p1, 0);
+        iCp2  = dist(r - eccentricity_p2, 0);
+        ip1p1 = dist(r, 0);
+        ip1C  = dist(r - eccentricity_p1, 0);
+        ip1p2 = dist(r - eccentricity_p1 - eccentricity_p2, 0);
+        ip2p1 = dist(r + eccentricity_p1 + eccentricity_p2, 0);
+        ip2C  = dist(r + eccentricity_p2, 0);
+        ip2p2 = dist(r, 0);
       } else if (type == 4) {
-        size_t is1s1 = size_t((r - 2 * eccentricity_p1) / samplingStep);
-        printPotential =
-          uHS[iBB] + uBB[iBB] + uBs1[iBs1] + uBs1[iBs1] + us1s1[is1s1];
+        iCp1  = dist(r - eccentricity_p1, 0);
+        iCp2  = dist(r + eccentricity_p2, 0);
+        ip1p1 = dist(r -2*eccentricity_p1, 0);
+        ip1C  = dist(r - eccentricity_p1, 0);
+        ip1p2 = dist(r - eccentricity_p1 + eccentricity_p2, 0);
+        ip2p1 = dist(r + eccentricity_p2 - eccentricity_p1, 0);
+        ip2C  = dist(r + eccentricity_p2, 0);
+        ip2p2 = dist(r + 2*eccentricity_p2, 0);
       } else if (type == 5) {
-        size_t is2s2 = size_t((r - 2 * eccentricity_p2) / samplingStep);
-        printPotential =
-          uHS[iBB] + uBB[iBB] + uBs2[iBs2] + uBs2[iBs2] + us2s2[is2s2];
+        iCp1  = dist(r + eccentricity_p1, 0);
+        iCp2  = dist(r - eccentricity_p2, 0);
+        ip1p1 = dist(r + 2*eccentricity_p1, 0);
+        ip1C  = dist(r + eccentricity_p1, 0);
+        ip1p2 = dist(r + eccentricity_p1 - eccentricity_p2, 0);
+        ip2p1 = dist(r - eccentricity_p2 + eccentricity_p1, 0);
+        ip2C  = dist(r - eccentricity_p2, 0);
+        ip2p2 = dist(r - 2*eccentricity_p2, 0);
       }
+      double printPotential =
+        ppot(uHS, iCC) + ppot(uBB, iCC) + ppot(uBs1, iCp1) + ppot(uBs2, iCp2)
+        + ppot(us1s1, ip1p1) + ppot(uBs1, ip1C) + ppot(us1s2, ip1p2)
+        + ppot(us1s2, ip2p1) + ppot(uBs2, ip2C) + ppot(us2s2, ip2p2);
       // finally, you can print
       potentialOutputFile << printPotential << '\n';
+      if (!saved) {
+        saved = true;
+        if (type == 0) {
+          rvEE = printPotential;
+        } else if (type == 1) {
+          rvEP1 = printPotential;
+        } else if (type == 2) {
+          rvEP2 = printPotential;
+        } else if (type == 3) {
+          rvP1P1 = printPotential;
+        } else if (type == 4) {
+          rvP1P2 = printPotential;
+        } else if (type == 5) {
+          rvP2P2 = printPotential;
+        }
+      }
     }
     potentialOutputFile.close();
   }
-}
-
-size_t
-PotentialForLammps::dist(double x, double y)
-{
-  double distance = std::sqrt(x * x + y * y);
-  // std::cout << "dist = (" << x << ", " << y << ")\n";
-  size_t distanceTab = size_t(distance / samplingStep);
-  if (distanceTab > uHS.size()) {
-    return 0;
-  }
-  return distanceTab;
 }
 
 static void
@@ -463,18 +639,24 @@ PotentialForLammps::printRecapFile(std::string const& outputDirName)
       << "\nvP2P2: " << vP2P2;
   }
 
+  if (reducedMode) {
+    std::cout << "Solved using the reduced solution\n";
+  } else {
+    std::cout << "Solved using the general solution\n";
+  }
+
   // overlap volumes at contact
-  double fBB = computeOmega(colloidRadius, colloidRadius, HSdiameter);
-  double fBs1 =
-    computeOmega(colloidRadius, radius_p1, HSdiameter - eccentricity_p1);
-  double fs1s1 =
-    computeOmega(radius_p1, radius_p1, HSdiameter - 2. * eccentricity_p1);
-  double fBs2 =
-    computeOmega(colloidRadius, radius_p2, HSdiameter - eccentricity_p2);
-  double fs1s2 = computeOmega(
-    radius_p1, radius_p2, HSdiameter - eccentricity_p1 - eccentricity_p2);
-  double fs2s2 =
-    computeOmega(radius_p2, radius_p2, HSdiameter - 2. * eccentricity_p2);
+  //double fBB = computeOmega(colloidRadius, colloidRadius, HSdiameter);
+  //double fBs1 =
+  //  computeOmega(colloidRadius, radius_p1, HSdiameter - eccentricity_p1);
+  //double fs1s1 =
+  //  computeOmega(radius_p1, radius_p1, HSdiameter - 2. * eccentricity_p1);
+  //double fBs2 =
+  //  computeOmega(colloidRadius, radius_p2, HSdiameter - eccentricity_p2);
+  //double fs1s2 = computeOmega(
+  //  radius_p1, radius_p2, HSdiameter - eccentricity_p1 - eccentricity_p2);
+  //double fs2s2 =
+  //  computeOmega(radius_p2, radius_p2, HSdiameter - 2. * eccentricity_p2);
 
   recapFile << "\n\n\nOUTPUT VALUES:\n\n"
 #ifdef DEBUG_MAIN
@@ -493,19 +675,28 @@ PotentialForLammps::printRecapFile(std::string const& outputDirName)
     << "\neps_s1s2 = " << e_s1s2 / e_min << "\neps_s2s2 = " << e_s2s2 / e_min
     << "\n\nRESULTING CONTACT VALUES:";
    if (symmetry == Symmetry::JANUS) {
-     recapFile << "\nback-back = " << (e_BB * fBB) / e_min
-       << "\nback-patch = " << (e_BB * fBB + fBs1 * e_Bs1) / e_min
-       << "\npatch-patch = " << (e_BB * fBB + 2*fBs1 * e_Bs1 + fs1s1 * e_s1s1) / e_min;
+     recapFile << "\nback-back = " << rvP2P2
+       << "\nback-patch = " << rvP1P2
+       << "\npatch-patch = " << rvP1P1;
+     //recapFile << "\nback-back = " << (e_BB * fBB) / e_min
+     //  << "\nback-patch = " << (e_BB * fBB + fBs1 * e_Bs1) / e_min
+     //  << "\npatch-patch = " << (e_BB * fBB + 2*fBs1 * e_Bs1 + fs1s1 * e_s1s1) / e_min;
    } else {
-     recapFile << "\nvEE = " << (e_BB * fBB) / e_min
-       << "\nvEP1 = " << (e_BB * fBB + fBs1 * e_Bs1) / e_min
-       << "\nvEP2 = " << (e_BB * fBB + fBs2 * e_Bs2) / e_min
-       << "\nvs1s1 = " << (e_BB * fBB + fBs1 * e_Bs1 + fBs1 * e_Bs1 + fs1s1 * e_s1s1) / e_min
-       << "\nvs1s2 = " << (e_BB * fBB + fBs1 * e_Bs1 + fBs2 * e_Bs2 + fs1s2 * e_s1s2) / e_min
-       << "\nvs2s2 = " << (e_BB * fBB + fBs2 * e_Bs2 + fBs2 * e_Bs2 + fs2s2 * e_s2s2) / e_min;
+     recapFile << "\nvEE = " << rvEE
+       << "\nvEP1 = " <<  rvEP1
+       << "\nvEP2 = " <<  rvEP2
+       << "\nvs1s1 = " << rvP1P1
+       << "\nvs1s2 = " << rvP1P2
+       << "\nvs2s2 = " << rvP2P2;
+     //recapFile << "\nvEE = " << (e_BB * fBB) / e_min
+     //  << "\nvEP1 = " << (e_BB * fBB + fBs1 * e_Bs1) / e_min
+     //  << "\nvEP2 = " << (e_BB * fBB + fBs2 * e_Bs2) / e_min
+     //  << "\nvs1s1 = " << (e_BB * fBB + fBs1 * e_Bs1 + fBs1 * e_Bs1 + fs1s1 * e_s1s1) / e_min
+     //  << "\nvs1s2 = " << (e_BB * fBB + fBs1 * e_Bs1 + fBs2 * e_Bs2 + fs1s2 * e_s1s2) / e_min
+     //  << "\nvs2s2 = " << (e_BB * fBB + fBs2 * e_Bs2 + fBs2 * e_Bs2 + fs2s2 * e_s2s2) / e_min;
    }
 
-   recapFile << "\n\nPlease double check that the INPUT VALUES match the OUTPUT VALUES."; 
+   recapFile << "\n\nPlease double check that the INPUT VALUES match the OUTPUT VALUES.";
 }
 
 void

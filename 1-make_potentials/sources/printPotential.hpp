@@ -32,8 +32,13 @@ public:
 
 private:
   Symmetry symmetry;
+  bool reducedMode;
+  // epsilons
   double e_BB, e_Bs1, e_Bs2, e_s1s1, e_s1s2, e_s2s2, e_min;
+  // contact values
   double vEE, vEP1, vEP2, vP1P1, vP1P2, vP2P2;
+
+  double rvEE, rvEP1, rvEP2, rvP1P1, rvP1P2, rvP2P2;
 
   double delta, colloidRadius, interactionRange;
   double eccentricity_p1, radius_p1;
@@ -50,5 +55,7 @@ private:
   void readContactValues(std::string const& inputFileName);
   void printComparisons();
   void computeEpsilonsFromContactValues();
+  void computeEpsilonsFromContactValuesReduced();
+  void computeEpsilonsFromContactValuesGeneral();
   size_t dist(double x, double y);
 };
