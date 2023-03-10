@@ -81,10 +81,10 @@ main(int argc, char* argv[])
   try {
     PotentialForLammps potential(
       inputFileName, symmetry, colloid, startFromContactValues);
-    potential.printRecapFile(outputDirName);
     potential.printLAMMPSpotentialsToFile(outputDirName);
     potential.printRadialPotentialsToFile(outputDirName);
     potential.printAngularPotentialsToFile(outputDirName);
+    potential.printRecapFile(outputDirName);
   } catch (std::runtime_error& e) {
     std::cerr << "ERROR: " << e.what() << "!\n\n";
     usage();

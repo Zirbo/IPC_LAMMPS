@@ -452,6 +452,25 @@ PotentialForLammps::printLAMMPSpotentialsToFile(
   }
 }
 
+size_t
+PotentialForLammps::dist(double x, double y)
+{
+  double distance = std::sqrt(x * x + y * y);
+  // std::cout << "dist = (" << x << ", " << y << ")\n";
+  size_t distanceTab = size_t(distance / samplingStep);
+  if (distanceTab > uHS.size()) {
+    return 0;
+  }
+  return distanceTab;
+}
+
+static double ppot(const std::vector<double>& pot, size_t dist) {
+  if (dist >= pot.size() || dist == 0) {
+    return 0.;
+  }
+  return pot[dist];
+}
+
 void
 PotentialForLammps::printRadialPotentialsToFile(
   std::string const& outputDirName)
@@ -481,6 +500,7 @@ PotentialForLammps::printRadialPotentialsToFile(
   }
 
   for (int type = 0; type < plotOrientations.size(); ++type) {
+    bool saved = false;
     // create the output file
     std::string fileName = dirName + '/' + plotOrientations[type] + ".dat";
     std::ofstream potentialOutputFile(fileName);
@@ -488,49 +508,88 @@ PotentialForLammps::printRadialPotentialsToFile(
 
     for (double r = HSdiameter; r < interactionRange; r += 0.001) {
       potentialOutputFile << r << '\t';
-
-      size_t iBB = size_t(r / samplingStep);
-      size_t iBs1 = size_t((r - eccentricity_p1) / samplingStep);
-      size_t iBs2 = size_t((r - eccentricity_p2) / samplingStep);
-      // compute potential depending on type and cutoff
-      double printPotential;
+      size_t iCC, iCp1, iCp2, ip1p1, ip1C, ip1p2, ip2p1, ip2C, ip2p2;
+      iCC = dist(r, 0);
       if (type == 0) {
-        printPotential = uHS[iBB] + uBB[iBB];
+        iCp1  = dist(r, eccentricity_p1);
+        iCp2  = dist(r, eccentricity_p2);
+        ip1p1 = dist(r, 0);
+        ip1C  = dist(r, eccentricity_p1);
+        ip1p2 = dist(r, eccentricity_p1 + eccentricity_p2);
+        ip2p1 = dist(r, eccentricity_p1 + eccentricity_p2);
+        ip2C  = dist(r, eccentricity_p2);
+        ip2p2 = dist(r, 0);
       } else if (type == 1) {
-        printPotential = uHS[iBB] + uBB[iBB] + uBs1[iBs1];
+        iCp1  = dist(r - eccentricity_p1, 0);
+        iCp2  = dist(r + eccentricity_p2, 0);
+        ip1p1 = dist(r - eccentricity_p1, eccentricity_p1);
+        ip1C  = dist(r, eccentricity_p1);
+        ip1p2 = dist(r + eccentricity_p2, eccentricity_p1);
+        ip2p1 = dist(r - eccentricity_p1, -eccentricity_p2);
+        ip2C  = dist(r, -eccentricity_p2);
+        ip2p2 = dist(r + eccentricity_p2, -eccentricity_p2);
       } else if (type == 2) {
-        printPotential = uHS[iBB] + uBB[iBB] + uBs2[iBs2];
+        iCp1  = dist(r + eccentricity_p1, 0);
+        iCp2  = dist(r - eccentricity_p2, 0);
+        ip1p1 = dist(r + eccentricity_p1, eccentricity_p1);
+        ip1C  = dist(r, eccentricity_p1);
+        ip1p2 = dist(r - eccentricity_p2, eccentricity_p1);
+        ip2p1 = dist(r + eccentricity_p1, -eccentricity_p2);
+        ip2C  = dist(r, -eccentricity_p2);
+        ip2p2 = dist(r - eccentricity_p2, -eccentricity_p2);
       } else if (type == 3) {
-        size_t is1s2 =
-          size_t((r - eccentricity_p1 - eccentricity_p2) / samplingStep);
-        printPotential =
-          uHS[iBB] + uBB[iBB] + uBs1[iBs1] + uBs2[iBs2] + us1s2[is1s2];
+        iCp1  = dist(r + eccentricity_p1, 0);
+        iCp2  = dist(r - eccentricity_p2, 0);
+        ip1p1 = dist(r, 0);
+        ip1C  = dist(r - eccentricity_p1, 0);
+        ip1p2 = dist(r - eccentricity_p1 - eccentricity_p2, 0);
+        ip2p1 = dist(r + eccentricity_p1 + eccentricity_p2, 0);
+        ip2C  = dist(r + eccentricity_p2, 0);
+        ip2p2 = dist(r, 0);
       } else if (type == 4) {
-        size_t is1s1 = size_t((r - 2 * eccentricity_p1) / samplingStep);
-        printPotential =
-          uHS[iBB] + uBB[iBB] + uBs1[iBs1] + uBs1[iBs1] + us1s1[is1s1];
+        iCp1  = dist(r - eccentricity_p1, 0);
+        iCp2  = dist(r + eccentricity_p2, 0);
+        ip1p1 = dist(r -2*eccentricity_p1, 0);
+        ip1C  = dist(r - eccentricity_p1, 0);
+        ip1p2 = dist(r - eccentricity_p1 + eccentricity_p2, 0);
+        ip2p1 = dist(r + eccentricity_p2 - eccentricity_p1, 0);
+        ip2C  = dist(r + eccentricity_p2, 0);
+        ip2p2 = dist(r + 2*eccentricity_p2, 0);
       } else if (type == 5) {
-        size_t is2s2 = size_t((r - 2 * eccentricity_p2) / samplingStep);
-        printPotential =
-          uHS[iBB] + uBB[iBB] + uBs2[iBs2] + uBs2[iBs2] + us2s2[is2s2];
+        iCp1  = dist(r + eccentricity_p1, 0);
+        iCp2  = dist(r - eccentricity_p2, 0);
+        ip1p1 = dist(r + 2*eccentricity_p1, 0);
+        ip1C  = dist(r + eccentricity_p1, 0);
+        ip1p2 = dist(r + eccentricity_p1 - eccentricity_p2, 0);
+        ip2p1 = dist(r - eccentricity_p2 + eccentricity_p1, 0);
+        ip2C  = dist(r - eccentricity_p2, 0);
+        ip2p2 = dist(r - 2*eccentricity_p2, 0);
       }
+      double printPotential =
+        ppot(uHS, iCC) + ppot(uBB, iCC) + ppot(uBs1, iCp1) + ppot(uBs2, iCp2)
+        + ppot(us1s1, ip1p1) + ppot(uBs1, ip1C) + ppot(us1s2, ip1p2)
+        + ppot(us1s2, ip2p1) + ppot(uBs2, ip2C) + ppot(us2s2, ip2p2);
       // finally, you can print
       potentialOutputFile << printPotential << '\n';
+      if (!saved) {
+        saved = true;
+        if (type == 0) {
+          rvEE = printPotential;
+        } else if (type == 1) {
+          rvEP1 = printPotential;
+        } else if (type == 2) {
+          rvEP2 = printPotential;
+        } else if (type == 3) {
+          rvP1P1 = printPotential;
+        } else if (type == 4) {
+          rvP1P2 = printPotential;
+        } else if (type == 5) {
+          rvP2P2 = printPotential;
+        }
+      }
     }
     potentialOutputFile.close();
   }
-}
-
-size_t
-PotentialForLammps::dist(double x, double y)
-{
-  double distance = std::sqrt(x * x + y * y);
-  // std::cout << "dist = (" << x << ", " << y << ")\n";
-  size_t distanceTab = size_t(distance / samplingStep);
-  if (distanceTab > uHS.size()) {
-    return 0;
-  }
-  return distanceTab;
 }
 
 static void
@@ -613,22 +672,31 @@ PotentialForLammps::printRecapFile(std::string const& outputDirName)
     << "\n\nNORMALIZED EPSILON COEFFICIENTS:"
     << "\neps_BB   = " << e_BB / e_min << "\neps_Bs1  = " << e_Bs1 / e_min
     << "\neps_Bs2  = " << e_Bs2 / e_min << "\neps_s1s1 = " << e_s1s1 / e_min
-    << "\neps_s1s2 = " << e_s1s2 / e_min << "\neps_s2s2 = " << e_s2s2 / e_min;
-  //recapFile << "\n\nRESULTING CONTACT VALUES:";
-  // if (symmetry == Symmetry::JANUS) {
-  //   recapFile << "\nback-back = " << (e_BB * fBB) / e_min
-  //     << "\nback-patch = " << (e_BB * fBB + fBs1 * e_Bs1) / e_min
-  //     << "\npatch-patch = " << (e_BB * fBB + 2*fBs1 * e_Bs1 + fs1s1 * e_s1s1) / e_min;
-  // } else {
-  //   recapFile << "\nvEE = " << (e_BB * fBB) / e_min
-  //     << "\nvEP1 = " << (e_BB * fBB + fBs1 * e_Bs1) / e_min
-  //     << "\nvEP2 = " << (e_BB * fBB + fBs2 * e_Bs2) / e_min
-  //     << "\nvs1s1 = " << (e_BB * fBB + fBs1 * e_Bs1 + fBs1 * e_Bs1 + fs1s1 * e_s1s1) / e_min
-  //     << "\nvs1s2 = " << (e_BB * fBB + fBs1 * e_Bs1 + fBs2 * e_Bs2 + fs1s2 * e_s1s2) / e_min
-  //     << "\nvs2s2 = " << (e_BB * fBB + fBs2 * e_Bs2 + fBs2 * e_Bs2 + fs2s2 * e_s2s2) / e_min;
-  // }
+    << "\neps_s1s2 = " << e_s1s2 / e_min << "\neps_s2s2 = " << e_s2s2 / e_min
+    << "\n\nRESULTING CONTACT VALUES:";
+   if (symmetry == Symmetry::JANUS) {
+     recapFile << "\nback-back = " << rvP2P2
+       << "\nback-patch = " << rvP1P2
+       << "\npatch-patch = " << rvP1P1;
+     //recapFile << "\nback-back = " << (e_BB * fBB) / e_min
+     //  << "\nback-patch = " << (e_BB * fBB + fBs1 * e_Bs1) / e_min
+     //  << "\npatch-patch = " << (e_BB * fBB + 2*fBs1 * e_Bs1 + fs1s1 * e_s1s1) / e_min;
+   } else {
+     recapFile << "\nvEE = " << rvEE
+       << "\nvEP1 = " <<  rvEP1
+       << "\nvEP2 = " <<  rvEP2
+       << "\nvs1s1 = " << rvP1P1
+       << "\nvs1s2 = " << rvP1P2
+       << "\nvs2s2 = " << rvP2P2;
+     //recapFile << "\nvEE = " << (e_BB * fBB) / e_min
+     //  << "\nvEP1 = " << (e_BB * fBB + fBs1 * e_Bs1) / e_min
+     //  << "\nvEP2 = " << (e_BB * fBB + fBs2 * e_Bs2) / e_min
+     //  << "\nvs1s1 = " << (e_BB * fBB + fBs1 * e_Bs1 + fBs1 * e_Bs1 + fs1s1 * e_s1s1) / e_min
+     //  << "\nvs1s2 = " << (e_BB * fBB + fBs1 * e_Bs1 + fBs2 * e_Bs2 + fs1s2 * e_s1s2) / e_min
+     //  << "\nvs2s2 = " << (e_BB * fBB + fBs2 * e_Bs2 + fBs2 * e_Bs2 + fs2s2 * e_s2s2) / e_min;
+   }
 
-  recapFile << "\n\nPlease double check that the INPUT VALUES match the OUTPUT VALUES."; 
+   recapFile << "\n\nPlease double check that the INPUT VALUES match the OUTPUT VALUES.";
 }
 
 void

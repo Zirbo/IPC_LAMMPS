@@ -38,6 +38,8 @@ private:
   // contact values
   double vEE, vEP1, vEP2, vP1P1, vP1P2, vP2P2;
 
+  double rvEE, rvEP1, rvEP2, rvP1P1, rvP1P2, rvP2P2;
+
   double delta, colloidRadius, interactionRange;
   double eccentricity_p1, radius_p1;
   double eccentricity_p2, radius_p2;
