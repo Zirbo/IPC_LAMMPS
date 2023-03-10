@@ -14,7 +14,8 @@ We have the following directories:
 Contains programs that compute the potentials in LAMMPS format, and some helpers.
 
 ### from_contact_values_to_potentials.sh
-(requires a c++11-compatible version of g++)
+(requires a c++11-compatible version of g++ for the simplified solution,
+and a c++14-compatible for the general solution, which uses Eigen)
 
 requires as input (modify the file to supply the inputs!)
 the geometric parameters and the desired contact values of the potential
@@ -34,11 +35,6 @@ explanation of the orientations.
 
 Finally there is also a file, inputfile.dat,
 that recaps your input values.
-
-### from_contact_values_to_potentials_gui.py
-(requires python3 and package pyQt)
-
-GUI for the script above. doesn't work yet :(
 
 ### from_epsilon_to_potentials.sh
 (requires a c++11-compatible version of g++)
