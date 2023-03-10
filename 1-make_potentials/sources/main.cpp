@@ -84,6 +84,7 @@ main(int argc, char* argv[])
     potential.printLAMMPSpotentialsToFile(outputDirName);
     potential.printRadialPotentialsToFile(outputDirName);
     potential.printAngularPotentialsToFile(outputDirName);
+    potential.printPotentialAlongPathToFile(outputDirName);
     potential.printRecapFile(outputDirName);
   } catch (std::runtime_error& e) {
     std::cerr << "ERROR: " << e.what() << "!\n\n";
