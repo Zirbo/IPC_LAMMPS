@@ -59,7 +59,7 @@ private:
   void computeEpsilonsFromContactValuesReduced();
   void computeEpsilonsFromContactValuesGeneral();
   size_t dist(double x, double y);
-  size_t dist(double x, double y, double z);
+  size_t dist(const double* xa, const double* xb);
 
-  double computePotRot(double theta_rot, double theta_riv, double phi_riv);
+  double computePotRot(double phi, double theta, double alpha, double beta);
 };

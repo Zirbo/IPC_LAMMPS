@@ -837,17 +837,6 @@ PotentialForLammps::printAngularPotentialsToFile(
   }
 }
 
-size_t
-PotentialForLammps::dist(double x, double y, double z)
-{
-  double distance = std::sqrt(x * x + y * y, + z * z);
-  size_t distanceTab = size_t(distance / samplingStep);
-  if (distanceTab > uHS.size()) {
-    return 0;
-  }
-  return distanceTab;
-}
-
 void
 PotentialForLammps::printPotentialAlongPathToFile(std::string const& outputDirName)
 {
@@ -856,145 +845,171 @@ PotentialForLammps::printPotentialAlongPathToFile(std::string const& outputDirNa
   if (mkdir(dirName.c_str(), 0777) != 0)
     std::runtime_error("Problem while creating the directory.");
   // create the output file
-  std::string fileName = dirName + '/' + type.name + ".dat";
-  std::ofstream potentialOutputFile(fileName);
+  std::string fileName = dirName + "/pot.dat";
+  std::ofstream potentialPathOutputFile(fileName);
   potentialPathOutputFile << std::scientific << std::setprecision(6);
 
-  // theta_riv, phi_riv, theta_rot
-  // theta_riv e zero allo zenith, 90 sul piano xy
-  // phi_riv e zero sull'asse x+, 90 y+, 180 x- 270 y-
-  // theta_rot e zero quando p1 punta in alto, 270 quando punta verso x-
-  // 90, 0, 270 -> 0
-  // 90 -> 0, 0, 0
-  // 0, 0, 0 -> 270
-  // 0 -> 90, 0, 270
-  // 90, 0 -> 90, 270
-  // 90, 90, 270 -> 0
+  /*
+   * one IPC is kept constant in the origin, with p1 point up.
+   * the second stays at fixed distance, and rotates.
+   * four angles are necessary: phi, theta, alpha, beta
+   * theta is the longitude of the CM of the second IPC relative to the first
+   * phi is the latitude
+   * alpha is the latitude of the first patch of the second IPC relative to its CM
+   * beta would be the longitude, but we don't care about it and we keep it constant
+   *
+   * theta is 0 on the x axis and goes clockwise
+   * phi is 0 on the z axis and grows when going down
+   * alpha is like phi
+   */
 
-  double theta_riv = 90;
-  double phi_riv = 0.;
-  double theta_rot = 270.;
-  for (theta_rot = 270.; theta_rot <= 360.; theta_rot += 5.) {
-    potentialPathOutputFile << theta_rot << '\t'
-        << computePotRot(theta_rot, theta_riv, phi_riv) << '\n';
+  /*
+   * the path is defined as such:
+   *        |    phi    |   theta   |   alpha  |   beta
+   * start  |     90    |     0     |    270   |    0
+   *   I    |     90    |     0     | 270 -> 0 |    0
+   *   II   |  90 -> 0  |     0     |     0    |    0
+   *  III   |     0     |     0     | 0 -> 270 |    0
+   *   IV   |  0 -> 90  |     0     |    270   |    0
+   *   V    |     90    |  0 -> 90  |    270   |    0
+   *   VI   |     90    |    90     | 270 -> 0 |    0
+  */
+
+  double phi = 90;
+  double theta = 0.;
+  double alpha = 270.;
+  double beta = 0.;
+  std::cout << "start: " << computePotRot(phi, theta, alpha, beta) << '\n';
+  for (alpha = 270.; alpha < 360.; alpha += 5.) {
+    potentialPathOutputFile << alpha - 270. << '\t'
+        << computePotRot(phi, theta, alpha, beta) << '\n';
   }
-  for (theta_riv = 90.; theta_riv > 0.; theta_riv -= 5.) {
-    potentialPathOutputFile << 90. + theta_riv << '\t'
-        << computePotRot(theta_rot, theta_riv, phi_riv) << '\n';
+  alpha = 0.;
+  std::cout << "break: " << computePotRot(phi, theta, alpha, beta) << '\n';
+  for (phi = 90.; phi > 0.; phi -= 5.) {
+    potentialPathOutputFile << 90. + (90. - phi) << '\t'
+        << computePotRot(phi, theta, alpha, beta) << '\n';
   }
-  for (theta_rot = 360.; theta_rot >= 270.; theta_rot -= 5.) {
-    potentialPathOutputFile << theta_rot << '\t'
-        << computePotRot(theta_rot, theta_riv, phi_riv) << '\n';
+  phi = 0.;
+  std::cout << "break: " << computePotRot(phi, theta, alpha, beta) << '\n';
+  for (alpha = 360.; alpha > 270.; alpha -= 5.) {
+    potentialPathOutputFile << 180. + (360. - alpha) << '\t'
+        << computePotRot(phi, theta, alpha, beta) << '\n';
   }
-  for (theta_riv = 0.; theta_riv <= 90.; theta_riv += 5.) {
-    potentialPathOutputFile << 90. + theta_riv << '\t'
-        << computePotRot(theta_rot, theta_riv, phi_riv) << '\n';
+  alpha = 270.;
+  std::cout << "break: " << computePotRot(phi, theta, alpha, beta) << '\n';
+  for (phi = 0.; phi < 90.; phi += 5.) {
+    potentialPathOutputFile << 270. + phi << '\t'
+        << computePotRot(phi, theta, alpha, beta) << '\n';
   }
-  for (phi_riv = 0.; phi_riv <= 90.; phi_riv += 5) {
-    potentialPathOutputFile << theta_rot << '\t'
-        << computePotRot(theta_rot, theta_riv, phi_riv) << '\n';
+  phi = 90.;
+  std::cout << "break: " << computePotRot(phi, theta, alpha, beta) << '\n';
+  for (theta = 0.; theta < 90.; theta += 5) {
+    potentialPathOutputFile << 360. + theta << '\t'
+        << computePotRot(phi, theta, alpha, beta) << '\n';
   }
-  for (theta_rot = 270.; theta_rot <= 360.; theta_rot += 5.) {
-    potentialPathOutputFile << theta_rot << '\t'
-        << computePotRot(theta_rot, theta_riv, phi_riv) << '\n';
+  theta = 90.;
+  std::cout << "break: " << computePotRot(phi, theta, alpha, beta) << '\n';
+  for (alpha = 270.; alpha < 360.; alpha += 5.) {
+    potentialPathOutputFile << 450. + (alpha - 270.) << '\t'
+        << computePotRot(phi, theta, alpha, beta) << '\n';
   }
+  alpha = 360.;
+  std::cout << "break: " << computePotRot(phi, theta, alpha, beta) << '\n';
 }
 
-double PotentialForLammps::computePotRot(double theta_rot, double theta_riv, double phi_riv) {
-  // theta_riv, phi_riv, theta_rot
-  // theta_riv e zero allo zenith, 90 sul piano xy
-  // phi_riv e zero sull'asse x+, 90 y+, 180 x- 270 y-
-  // theta_rot e zero quando p1 punta in alto, 270 quando punta verso x-
+size_t
+PotentialForLammps::dist(const double* xa, const double* xb)
+{
+  double distance = std::sqrt( std::pow(xa[0] - xb[0], 2)
+    + std::pow(xa[1] - xb[1], 2) + std::pow(xa[2] - xb[2], 2) );
+  size_t distanceTab = size_t(distance / samplingStep);
+  if (distanceTab > uHS.size()) {
+    return 0;
+  }
+  return distanceTab;
+}
+
+double PotentialForLammps::computePotRot(double phi, double theta, double alpha, double beta) {
+  /*
+   * one IPC is kept constant in the origin, with p1 point up.
+   * the second stays at fixed distance, and rotates.
+   * four angles are necessary: phi, theta, alpha, beta
+   * theta is the longitude of the CM of the second IPC relative to the first
+   * phi is the latitude
+   * alpha is the latitude of the first patch of the second IPC relative to its CM
+   * beta would be the longitude, but we don't care about it and we keep it constant
+   *
+   * theta is 0 on the x axis and goes clockwise
+   * phi is 0 on the z axis and grows when going down
+   * alpha is like phi
+   * beta is, at the moment, ignored.
+   */
   double potential = 0;
-  double dx = 0.;
-  double dy = 0.;
-  double dz = 0.
   size_t distTab = 0;
+  phi   *=  M_PI / 180.;
+  theta *=  M_PI / 180.;
+  alpha *=  M_PI / 180.;
+  beta  *=  M_PI / 180.;
+
+  // ipc 1
+  double ipc1cb[3] = {0., 0., 0.};
+  double ipc1p1[3] = {0., 0.,  eccentricity_p1};
+  double ipc1p2[3] = {0., 0., -eccentricity_p2};
+  // ipc 2
+  double ipc2cb[3] = { std::cos(theta)*std::sin(phi),  std::sin(theta)*std::sin(phi),  std::cos(phi) };
+  double ipc2p1[3] = { std::cos(alpha)*std::sin(beta), std::sin(alpha)*std::sin(beta), std::cos(beta) };
+  double ipc2p2[3];
+  for (int i = 0; i < 3; ++i) {
+    ipc2cb[i] *= HSdiameter;
+    ipc2p1[i] = ipc2cb[i] + eccentricity_p1 * ipc2p1[i];
+    ipc2p2[i] = ipc2cb[i] - eccentricity_p2 * ipc2p1[i];
+  }
 
   // CC
-  distTab = dist(HSdiameter, 0.0, 0.0);
+  distTab = dist(ipc1cb, ipc2cb);
   if (distTab != 0) {
-    double pot = uHS[distTab] + uBB[distTab];
-    log("CC", distTab, pot);
-    potential += pot;
+    potential += uHS[distTab] + uBB[distTab];
   }
   // Cp1
-  dx = HSdiameter - eccentricity_p1 * cos(theta_2);
-  dy = eccentricity_p1 * sin(theta_2);
-  distTab = dist(dx, dy);
+  distTab = dist(ipc1cb, ipc2p1);
   if (distTab != 0) {
-    double pot = uBs1[distTab];
-    log("Cp1", distTab, pot);
-    potential += pot;
+    potential += uBs1[distTab];
   }
   // Cp2
-  dx = HSdiameter + eccentricity_p2 * cos(theta_2);
-  dy = -eccentricity_p2 * sin(theta_2);
-  distTab = dist(dx, dy);
+  distTab = dist(ipc1cb, ipc1p2);
   if (distTab != 0) {
-    double pot = uBs2[distTab];
-    log("Cp2", distTab, pot);
-    potential += pot;
+    potential += uBs2[distTab];
   }
-
   // p1C
-  dx = eccentricity_p1 * cos(theta_1) + HSdiameter;
-  dy = eccentricity_p1 * sin(theta_1);
-  distTab = dist(dx, dy);
+  distTab = dist(ipc1p1, ipc2cb);
   if (distTab != 0) {
-    double pot = uBs1[distTab];
-    log("p1C", distTab, pot);
-    potential += pot;
+    potential += uBs1[distTab];
   }
   // p1p1
-  dx = eccentricity_p1 * cos(theta_1) + HSdiameter -
-       eccentricity_p1 * cos(theta_2);
-  dy = eccentricity_p1 * sin(theta_1) - eccentricity_p1 * sin(theta_2);
-  distTab = dist(dx, dy);
+  distTab = dist(ipc1p1, ipc2p1);
   if (distTab != 0) {
-    double pot = us1s1[distTab];
-    log("p1p1", distTab, pot);
-    potential += pot;
+    potential += us1s1[distTab];
   }
   // p1p2
-  dx = eccentricity_p1 * cos(theta_1) + HSdiameter +
-       eccentricity_p2 * cos(theta_2);
-  dy = eccentricity_p1 * sin(theta_1) + eccentricity_p2 * sin(theta_2);
-  distTab = dist(dx, dy);
+  distTab = dist(ipc1p1, ipc1p2);
   if (distTab != 0) {
-    double pot = us1s2[distTab];
-    log("p1p2", distTab, pot);
-    potential += pot;
+    potential += us1s2[distTab];
   }
-
   // p2C
-  dx = HSdiameter - eccentricity_p2 * cos(theta_1);
-  dy = eccentricity_p2 * sin(theta_1);
-  distTab = dist(dx, dy);
+  distTab = dist(ipc1p2, ipc2cb);
   if (distTab != 0) {
-    double pot = uBs2[distTab];
-    log("p2C", distTab, pot);
-    potential += pot;
+    potential += uBs2[distTab];
   }
   // p2p1
-  dx = HSdiameter - eccentricity_p2 * cos(theta_1) -
-       eccentricity_p1 * cos(theta_2);
-  dy = eccentricity_p2 * sin(theta_1) + eccentricity_p1 * sin(theta_2);
-  distTab = dist(dx, dy);
+  distTab = dist(ipc1p2, ipc2p1);
   if (distTab != 0) {
-    double pot = us1s2[distTab];
-    log("p2p1", distTab, pot);
-    potential += pot;
+    potential += us1s2[distTab];
   }
   // p2p2
-  dx = HSdiameter - eccentricity_p2 * cos(theta_1) +
-       eccentricity_p2 * cos(theta_2);
-  dy = eccentricity_p2 * sin(theta_1) - eccentricity_p2 * sin(theta_2);
-  distTab = dist(dx, dy);
+  distTab = dist(ipc1p2, ipc1p2);
   if (distTab != 0) {
-    double pot = us2s2[distTab];
-    log("p2p2", distTab, pot);
-    potential += pot;
+    potential += us2s2[distTab];
   }
-  return pot;
+  return potential;
 }
