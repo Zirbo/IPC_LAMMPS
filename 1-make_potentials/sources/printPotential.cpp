@@ -856,7 +856,7 @@ PotentialForLammps::printPotentialAlongPathToFile(std::string const& outputDirNa
    * theta is the longitude of the CM of the second IPC relative to the first
    * phi is the latitude
    * alpha is the latitude of the first patch of the second IPC relative to its CM
-   * beta would be the longitude, but we don't care about it and we keep it constant
+   * beta is the longitude
    *
    * theta is 0 on the x axis and goes clockwise
    * phi is 0 on the z axis and grows when going down
@@ -866,56 +866,49 @@ PotentialForLammps::printPotentialAlongPathToFile(std::string const& outputDirNa
   /*
    * the path is defined as such:
    *        |    phi    |   theta   |   alpha  |   beta
-   * start  |     90    |     0     |    270   |    0
-   *   I    |     90    |     0     | 270 -> 0 |    0
-   *   II   |  90 -> 0  |     0     |     0    |    0
-   *  III   |     0     |     0     | 0 -> 270 |    0
-   *   IV   |  0 -> 90  |     0     |    270   |    0
-   *   V    |     90    |  0 -> 90  |    270   |    0
-   *   VI   |     90    |    90     | 270 -> 0 |    0
+   * start  |     90    |     0     |    90    |   180
+   *   I    |     90    |     0     |  90 -> 0 |   180
+   *   II   |  90 -> 0  |     0     |     0    |   180
+   *  III   |     0     |     0     |  0 -> 90 |   180
+   *   IV   |  0 -> 90  |     0     |     90   |   180
+   *   V    |     90    |  0 -> 90  |     90   |   180
+   *   VI   |     90    |    90     |  90 -> 0 |   180
   */
 
   double phi = 90;
   double theta = 0.;
-  double alpha = 270.;
-  double beta = 0.;
-  std::cout << "start: " << computePotRot(phi, theta, alpha, beta) << '\n';
-  for (alpha = 270.; alpha < 360.; alpha += 5.) {
-    potentialPathOutputFile << alpha - 270. << '\t'
+  double alpha = 90.;
+  double beta = 180.;
+  for (alpha = 90.; alpha > 0.; alpha -= 5.) {
+    potentialPathOutputFile << 90. - alpha << '\t'
         << computePotRot(phi, theta, alpha, beta) << '\n';
   }
   alpha = 0.;
-  std::cout << "break: " << computePotRot(phi, theta, alpha, beta) << '\n';
   for (phi = 90.; phi > 0.; phi -= 5.) {
     potentialPathOutputFile << 90. + (90. - phi) << '\t'
         << computePotRot(phi, theta, alpha, beta) << '\n';
   }
   phi = 0.;
-  std::cout << "break: " << computePotRot(phi, theta, alpha, beta) << '\n';
-  for (alpha = 360.; alpha > 270.; alpha -= 5.) {
-    potentialPathOutputFile << 180. + (360. - alpha) << '\t'
+  for (alpha = 0.; alpha < 90.; alpha += 5.) {
+    potentialPathOutputFile << 180. + alpha << '\t'
         << computePotRot(phi, theta, alpha, beta) << '\n';
   }
   alpha = 270.;
-  std::cout << "break: " << computePotRot(phi, theta, alpha, beta) << '\n';
   for (phi = 0.; phi < 90.; phi += 5.) {
     potentialPathOutputFile << 270. + phi << '\t'
         << computePotRot(phi, theta, alpha, beta) << '\n';
   }
   phi = 90.;
-  std::cout << "break: " << computePotRot(phi, theta, alpha, beta) << '\n';
   for (theta = 0.; theta < 90.; theta += 5) {
     potentialPathOutputFile << 360. + theta << '\t'
         << computePotRot(phi, theta, alpha, beta) << '\n';
   }
   theta = 90.;
-  std::cout << "break: " << computePotRot(phi, theta, alpha, beta) << '\n';
-  for (alpha = 270.; alpha < 360.; alpha += 5.) {
-    potentialPathOutputFile << 450. + (alpha - 270.) << '\t'
+  for (alpha = 90.; alpha > 0.; alpha -= 5.) {
+    potentialPathOutputFile << 450. + (90. - alpha) << '\t'
         << computePotRot(phi, theta, alpha, beta) << '\n';
   }
   alpha = 360.;
-  std::cout << "break: " << computePotRot(phi, theta, alpha, beta) << '\n';
 }
 
 size_t
@@ -958,12 +951,13 @@ double PotentialForLammps::computePotRot(double phi, double theta, double alpha,
   double ipc1p2[3] = {0., 0., -eccentricity_p2};
   // ipc 2
   double ipc2cb[3] = { std::cos(theta)*std::sin(phi),  std::sin(theta)*std::sin(phi),  std::cos(phi) };
-  double ipc2p1[3] = { std::cos(alpha)*std::sin(beta), std::sin(alpha)*std::sin(beta), std::cos(beta) };
-  double ipc2p2[3];
+  double ipc2temp[3] = { std::cos(beta)*std::sin(alpha), std::sin(beta)*std::sin(alpha), std::cos(alpha) };
+  double ipc2p1[3] = { 0., 0., 0. };
+  double ipc2p2[3] = { 0., 0., 0. };
   for (int i = 0; i < 3; ++i) {
     ipc2cb[i] *= HSdiameter;
-    ipc2p1[i] = ipc2cb[i] + eccentricity_p1 * ipc2p1[i];
-    ipc2p2[i] = ipc2cb[i] - eccentricity_p2 * ipc2p1[i];
+    ipc2p1[i] = ipc2cb[i] + eccentricity_p1 * ipc2temp[i];
+    ipc2p2[i] = ipc2cb[i] - eccentricity_p2 * ipc2temp[i];
   }
 
   // CC
@@ -977,7 +971,7 @@ double PotentialForLammps::computePotRot(double phi, double theta, double alpha,
     potential += uBs1[distTab];
   }
   // Cp2
-  distTab = dist(ipc1cb, ipc1p2);
+  distTab = dist(ipc1cb, ipc2p2);
   if (distTab != 0) {
     potential += uBs2[distTab];
   }
@@ -992,7 +986,7 @@ double PotentialForLammps::computePotRot(double phi, double theta, double alpha,
     potential += us1s1[distTab];
   }
   // p1p2
-  distTab = dist(ipc1p1, ipc1p2);
+  distTab = dist(ipc1p1, ipc2p2);
   if (distTab != 0) {
     potential += us1s2[distTab];
   }
@@ -1007,7 +1001,7 @@ double PotentialForLammps::computePotRot(double phi, double theta, double alpha,
     potential += us1s2[distTab];
   }
   // p2p2
-  distTab = dist(ipc1p2, ipc1p2);
+  distTab = dist(ipc1p2, ipc2p2);
   if (distTab != 0) {
     potential += us2s2[distTab];
   }
