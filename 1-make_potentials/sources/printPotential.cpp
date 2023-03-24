@@ -76,11 +76,15 @@ PotentialForLammps::readContactValues(std::string const& inputFileName)
 PotentialForLammps::PotentialForLammps(const std::string& inputFileName,
                                        const Symmetry symmetry,
                                        const Colloid colloid,
+                                       const Mapping mapping,
                                        bool startFromContactValues)
-  : symmetry{ symmetry }
+  : symmetry{ symmetry }, mapping{ mapping }
 {
   if (symmetry == Symmetry::NONE) {
-    throw std::runtime_error("Symmetry and/or colloid type not specified");
+    throw std::runtime_error("Symmetry not specified");
+  }
+  if (mapping == Mapping::NONE) {
+    throw std::runtime_error("Mapping not specified");
   }
 
   if (startFromContactValues) {
@@ -643,19 +647,6 @@ PotentialForLammps::printRecapFile(std::string const& outputDirName)
   } else {
     std::cout << "Solved using the general solution\n";
   }
-
-  // overlap volumes at contact
-  //double fBB = computeOmega(colloidRadius, colloidRadius, HSdiameter);
-  //double fBs1 =
-  //  computeOmega(colloidRadius, radius_p1, HSdiameter - eccentricity_p1);
-  //double fs1s1 =
-  //  computeOmega(radius_p1, radius_p1, HSdiameter - 2. * eccentricity_p1);
-  //double fBs2 =
-  //  computeOmega(colloidRadius, radius_p2, HSdiameter - eccentricity_p2);
-  //double fs1s2 = computeOmega(
-  //  radius_p1, radius_p2, HSdiameter - eccentricity_p1 - eccentricity_p2);
-  //double fs2s2 =
-  //  computeOmega(radius_p2, radius_p2, HSdiameter - 2. * eccentricity_p2);
 
   recapFile << "\n\n\nOUTPUT VALUES:\n\n"
 #ifdef DEBUG_MAIN

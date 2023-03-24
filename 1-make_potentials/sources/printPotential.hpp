@@ -4,6 +4,13 @@
 #include <string>
 #include <vector>
 
+enum class Mapping
+{
+  NONE,
+  GEOMETRIC,
+  EXPONENTIAL,
+};
+
 enum class Symmetry
 {
   NONE,
@@ -24,6 +31,7 @@ public:
   PotentialForLammps(std::string const& inputFileName,
                      const Symmetry simmetry,
                      const Colloid colloid,
+                     const Mapping mapping,
                      bool startFromContactValues);
   void printRecapFile(std::string const& outputDirName);
   void printLAMMPSpotentialsToFile(std::string const& outputDirName);
@@ -33,6 +41,7 @@ public:
 
 private:
   Symmetry symmetry;
+  Mapping mapping;
   bool reducedMode;
   // epsilons
   double e_BB, e_Bs1, e_Bs2, e_s1s1, e_s1s2, e_s2s2, e_min;
