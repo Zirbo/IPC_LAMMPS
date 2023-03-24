@@ -174,7 +174,6 @@ PotentialForLammps::computeEpsilonsFromContactValues()
  && pow(radius_p2 + radius_p1, 2) < pow(HSdiameter - eccentricity_p2, 2) + pow(eccentricity_p1, 2)
  && pow(radius_p2 + radius_p2, 2) < pow(HSdiameter - eccentricity_p2, 2) + pow(eccentricity_p2, 2);
   reducedMode = noPPinEE && noCPinEE && noPPinEP;
-  reducedMode &= false;
   if (reducedMode) {
     computeEpsilonsFromContactValuesReduced();
   } else {
