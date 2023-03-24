@@ -29,6 +29,7 @@ public:
   void printLAMMPSpotentialsToFile(std::string const& outputDirName);
   void printRadialPotentialsToFile(std::string const& outputDirName);
   void printAngularPotentialsToFile(std::string const& outputDirName);
+  void printPotentialAlongPathToFile(std::string const& outputDirName);
 
 private:
   Symmetry symmetry;
@@ -58,4 +59,7 @@ private:
   void computeEpsilonsFromContactValuesReduced();
   void computeEpsilonsFromContactValuesGeneral();
   size_t dist(double x, double y);
+  size_t dist(const double* xa, const double* xb);
+
+  double computePotRot(double phi, double theta, double alpha, double beta);
 };

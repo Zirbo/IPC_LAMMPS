@@ -14,10 +14,10 @@ We have the following directories:
 Contains programs that compute the potentials in LAMMPS format, and some helpers.
 
 ### from_contact_values_to_potentials.sh
-(requires a c++11-compatible version of g++ for the simplified solution,
-and a c++14-compatible for the general solution, which uses Eigen)
+(requires a c++14-compatible version of g++ and uses Eigen library,
+which will be downloaded automatically)
 
-requires as input (modify the file to supply the inputs!)
+Requires as input (modify the file to supply the inputs!)
 the geometric parameters and the desired contact values of the potential
 in the three EE, EP1 and P1P1 orientations
 (plus EP2, P1P2, P2P2 for asymmetric models)
@@ -26,9 +26,10 @@ and prints out the potential in an output directory,
 named `target_<modelname>_<symmetry>_contact`.
 
 The directory contains a lammpspot dir that contains your potential.
-In addition there will be two directories,
-lammpspot_angular_plots and
-lammpspot_radial_plots,
+In addition there will be three directories:
+- lammpspot_angular_plots
+- lammpspot_radial_plots
+- potential_on_path
 whose content can be plotted using gnuplot or xmgrace, so you can
 quickly visualize your potential. See the reference paper [3] for an
 explanation of the orientations.
@@ -37,14 +38,13 @@ Finally there is also a file, inputfile.dat,
 that recaps your input values.
 
 ### from_epsilon_to_potentials.sh
-(requires a c++11-compatible version of g++)
-
 Requires as input (modify the file to supply the inputs!)
 the geometric parameters and the epsilons from the mapping (see the
 reference papers!) and prints out the potential in the output directory
 named `target_<modelname>_<symmetry>_epsilons`.
 
-The content is the same as for from_contact_values_to_potentials.sh.
+It is a wrapper to the same program used by from_contact_values_to_potentials.sh.
+Outputs and requirements are exactly the same.
 
 
 ### compute_ipc_geometry.py
@@ -52,7 +52,7 @@ The content is the same as for from_contact_values_to_potentials.sh.
 
 In case you want to follow the IPC geometry, this python script helps
 you determine eccentricity and patch radius from patch amplitude and
-interaction range, or viceversa. Check the inline manual with -h.
+interaction range, or viceversa. Check the inline help with -h.
 
 ## 2-startingstate_creators
 Contains Python3 scripts that can be used to generate FCC startingstates
