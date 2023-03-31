@@ -480,30 +480,30 @@ PotentialForLammps::computeSiteSitePotentials()
       uBB[i]   = (e_BB / e_min)   * computeOmega(colloidRadius, colloidRadius, r);
       uBs1[i]  = (e_Bs1 / e_min)  * computeOmega(colloidRadius, radius_p1, r);
       uBs2[i]  = (e_Bs2 / e_min)  * computeOmega(colloidRadius, radius_p2, r);
+      us1s1[i] = (e_s1s1 / e_min) * computeOmega(radius_p1, radius_p1, r);
       us1s2[i] = (e_s1s2 / e_min) * computeOmega(radius_p1, radius_p2, r);
       us2s2[i] = (e_s2s2 / e_min) * computeOmega(radius_p2, radius_p2, r);
-      us1s1[i] = (e_s1s1 / e_min) * computeOmega(radius_p1, radius_p1, r);
 
       fBB[i]   = (e_BB / e_min)   * compute_dOmega_dr(colloidRadius, colloidRadius, r);
       fBs1[i]  = (e_Bs1 / e_min)  * compute_dOmega_dr(colloidRadius, radius_p1, r);
       fBs2[i]  = (e_Bs2 / e_min)  * compute_dOmega_dr(colloidRadius, radius_p2, r);
+      fs1s1[i] = (e_s1s1 / e_min) * compute_dOmega_dr(radius_p1, radius_p1, r);
       fs1s2[i] = (e_s1s2 / e_min) * compute_dOmega_dr(radius_p1, radius_p2, r);
       fs2s2[i] = (e_s2s2 / e_min) * compute_dOmega_dr(radius_p2, radius_p2, r);
-      fs1s1[i] = (e_s1s1 / e_min) * compute_dOmega_dr(radius_p1, radius_p1, r);
     } else if (mapping == Mapping::EXPONENTIAL) {
       uBB[i]   = (e_BB / e_min)   * computeOmegaExp(k, HSdiameter, r);
       uBs1[i]  = (e_Bs1 / e_min)  * computeOmegaExp(k, HSdiameter - eccentricity_p1, r);
       uBs2[i]  = (e_Bs2 / e_min)  * computeOmegaExp(k, HSdiameter - eccentricity_p2, r);
-      us1s2[i] = (e_s1s2 / e_min) * computeOmegaExp(k, HSdiameter - 2*eccentricity_p1, r);
-      us2s2[i] = (e_s2s2 / e_min) * computeOmegaExp(k, HSdiameter - eccentricity_p1 - eccentricity_p2, r);
-      us1s1[i] = (e_s1s1 / e_min) * computeOmegaExp(k, HSdiameter - 2*eccentricity_p2, r);
+      us1s1[i] = (e_s1s1 / e_min) * computeOmegaExp(k, HSdiameter - 2*eccentricity_p1, r);
+      us1s2[i] = (e_s1s2 / e_min) * computeOmegaExp(k, HSdiameter - eccentricity_p1 - eccentricity_p2, r);
+      us2s2[i] = (e_s2s2 / e_min) * computeOmegaExp(k, HSdiameter - 2*eccentricity_p2, r);
 
       fBB[i] =   (e_BB / e_min)   * compute_dOmegaExp_dr(k,HSdiameter, r);
       fBs1[i] =  (e_Bs1 / e_min)  * compute_dOmegaExp_dr(k, HSdiameter - eccentricity_p1, r);
       fBs2[i] =  (e_Bs2 / e_min)  * compute_dOmegaExp_dr(k, HSdiameter - eccentricity_p2, r);
-      fs1s2[i] = (e_s1s2 / e_min) * compute_dOmegaExp_dr(k, HSdiameter - 2*eccentricity_p1, r);
-      fs2s2[i] = (e_s2s2 / e_min) * compute_dOmegaExp_dr(k, HSdiameter - eccentricity_p1 - eccentricity_p2, r);
-      fs1s1[i] = (e_s1s1 / e_min) * compute_dOmegaExp_dr(k, HSdiameter - 2*eccentricity_p2, r);
+      fs1s1[i] = (e_s1s1 / e_min) * compute_dOmegaExp_dr(k, HSdiameter - 2*eccentricity_p1, r);
+      fs1s2[i] = (e_s1s2 / e_min) * compute_dOmegaExp_dr(k, HSdiameter - eccentricity_p1 - eccentricity_p2, r);
+      fs2s2[i] = (e_s2s2 / e_min) * compute_dOmegaExp_dr(k, HSdiameter - 2*eccentricity_p2, r);
     }
 
     if (r <= HSdiameter) {
