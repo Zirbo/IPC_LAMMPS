@@ -65,8 +65,11 @@ private:
   void readContactValues(std::string const& inputFileName);
   void printComparisons();
   void computeEpsilonsFromContactValues();
-  void computeEpsilonsFromContactValuesReduced();
-  void computeEpsilonsFromContactValuesGeneral();
+  void computeGeometricEpsilonsFromContactValues();
+  void computeGeometricEpsilonsFromContactValuesReduced();
+  void computeGeometricEpsilonsFromContactValuesGeneral();
+  void computeExponentialEpsilonsFromContactValues();
+  void computeExponentialEpsilonsFromContactValuesGeneral();
   size_t dist(double x, double y);
   size_t dist(const double* xa, const double* xb);
 

@@ -82,7 +82,7 @@ pushd sources
     ./build.sh
   fi
 
-  target="../target_${model_name}_${symmetry}_epsilons"
+  target="../target_${model_name}_${symmetry}_${mapping}_epsilons"
   [ -d $target ] && rm -rf $target
   mkdir -p $target
 
