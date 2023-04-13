@@ -14,8 +14,9 @@ usage()
             << "Usage:\n"
             << "\t-c start from contact values\n"
             << "\t-e start from epsilons\n"
-            << "\t-m model, allowed values are j-ipc, s-ipc, a-ipc,\n"
-            << "\t\t which stand for Janus, Symmetric and Asymmetric ipcs\n"
+            << "\t-s symmetry, allowed values are janus, symm, asymm,\n"
+            << "\t\t which stand for Janus, Symmetric and Asymmetric OSPCs\n"
+            << "\t-m mapping, can be g (geometric) or e (exponential)\n"
             << "\t-i inputfile\n"
             << "\t-o output dir\n"
             << "All parameters are required, "
@@ -28,13 +29,14 @@ main(int argc, char* argv[])
 {
   Symmetry symmetry = Symmetry::NONE;
   Colloid colloid = Colloid::OSPC;
+  Mapping mapping = Mapping::NONE;
   std::string inputFileName;
   std::string outputDirName;
   bool startFromContactValues = false;
   bool startFromEpsilons = false;
 
   int opt = 0;
-  while ((opt = getopt(argc, argv, "hcepm:i:o:")) != -1) {
+  while ((opt = getopt(argc, argv, "hceps:m:i:o:")) != -1) {
     switch (opt) {
       case 'h':
         usage();
@@ -48,13 +50,20 @@ main(int argc, char* argv[])
       case 'p':
         colloid = Colloid::IPC;
         break;
-      case 'm':
+      case 's':
         if (strcmp(optarg, "janus") == 0) {
           symmetry = Symmetry::JANUS;
         } else if (strcmp(optarg, "symm") == 0) {
           symmetry = Symmetry::SYMMETRIC;
         } else if (strcmp(optarg, "asymm") == 0) {
           symmetry = Symmetry::ASYMMETRIC;
+        }
+        break;
+      case 'm':
+        if (strcmp(optarg, "g") == 0) {
+          mapping = Mapping::GEOMETRIC;
+        } else if (strcmp(optarg, "e") == 0) {
+          mapping = Mapping::EXPONENTIAL;
         }
         break;
       case 'i':
@@ -78,9 +87,14 @@ main(int argc, char* argv[])
     std::cerr << "ERROR: only one of -c or -e is allowed!\n\n";
     usage();
   }
+  if (symmetry == Symmetry::NONE || mapping == Mapping::NONE) {
+    std::cerr << "ERROR: symmetry or mapping missing\n\n";
+    usage();
+  }
+
   try {
     PotentialForLammps potential(
-      inputFileName, symmetry, colloid, startFromContactValues);
+      inputFileName, symmetry, colloid, mapping, startFromContactValues);
     potential.printLAMMPSpotentialsToFile(outputDirName);
     potential.printRadialPotentialsToFile(outputDirName);
     potential.printAngularPotentialsToFile(outputDirName);

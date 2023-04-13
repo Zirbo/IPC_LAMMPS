@@ -76,11 +76,18 @@ PotentialForLammps::readContactValues(std::string const& inputFileName)
 PotentialForLammps::PotentialForLammps(const std::string& inputFileName,
                                        const Symmetry symmetry,
                                        const Colloid colloid,
+                                       const Mapping mapping,
                                        bool startFromContactValues)
-  : symmetry{ symmetry }
+  : symmetry{ symmetry }, mapping{ mapping }
 {
   if (symmetry == Symmetry::NONE) {
-    throw std::runtime_error("Symmetry and/or colloid type not specified");
+    throw std::runtime_error("Symmetry not specified");
+  }
+  if (mapping == Mapping::NONE) {
+    throw std::runtime_error("Mapping not specified");
+  }
+  if (mapping == Mapping::EXPONENTIAL && !startFromContactValues) {
+    throw std::runtime_error("exponential mapping from epsilons is not implemented yet");
   }
 
   if (startFromContactValues) {
@@ -103,10 +110,24 @@ PotentialForLammps::PotentialForLammps(const std::string& inputFileName,
     radius_p2 = radius_p1;
   }
 
-  // interactionRange -> furthest point from center with nonzero interaction
+  // check IPC geometry requirements
   double range_p1 = radius_p1 + eccentricity_p1;
   double range_p2 = radius_p2 + eccentricity_p2;
-  interactionRange = 2 * std::max(std::max(range_p1, range_p2), colloidRadius);
+  if (colloid == Colloid::IPC) {
+    const double diff_1 = (range_p1 / range_p2) - 1.;
+    const double diff_2 = (range_p1 / colloidRadius) - 1.;
+
+    if (std::fabs(diff_1) > 1e-4 || std::fabs(diff_2) > 1e-4) {
+      throw std::runtime_error("Invalid IPC geometry");
+    }
+  }
+
+  // interactionRange -> furthest point from center with nonzero interaction
+  if (mapping == Mapping::GEOMETRIC) {
+    interactionRange = 2 * std::max(std::max(range_p1, range_p2), colloidRadius);
+  } else if (mapping == Mapping::EXPONENTIAL) {
+    interactionRange = 2.5*(HSdiameter + delta);
+  }
 #ifdef DEBUG_MAIN
   std::cout << "interaction range = 2 x max(" << colloidRadius << ", "
             << range_p1 << ", " << range_p2 << ") = " << interactionRange
@@ -124,16 +145,6 @@ PotentialForLammps::PotentialForLammps(const std::string& inputFileName,
   }
   if (delta < 0.) {
     throw std::runtime_error("delta cannot be negative");
-  }
-
-  if (colloid == Colloid::IPC) {
-    // check IPC geometry requirements
-    const double diff_1 = (range_p1 / range_p2) - 1.;
-    const double diff_2 = (range_p1 / colloidRadius) - 1.;
-
-    if (std::fabs(diff_1) > 1e-4 || std::fabs(diff_2) > 1e-4) {
-      throw std::runtime_error("Invalid IPC geometry");
-    }
   }
 
   // define potential coefficients
@@ -160,8 +171,19 @@ computeOmega(double Ra, double Rb, double rab)
   }
 }
 
-void
-PotentialForLammps::computeEpsilonsFromContactValues()
+void PotentialForLammps::computeEpsilonsFromContactValues()
+{
+  switch(mapping) {
+    case Mapping::EXPONENTIAL:
+      return computeExponentialEpsilonsFromContactValues();
+    case Mapping::GEOMETRIC:
+      return computeGeometricEpsilonsFromContactValues();
+    default:
+      throw std::runtime_error("Invalid mapping");
+  }
+}
+
+void PotentialForLammps::computeGeometricEpsilonsFromContactValues()
 {
   bool noPPinEE =
     (radius_p1 < .5*HSdiameter) && (radius_p2 < .5*HSdiameter);
@@ -175,14 +197,13 @@ PotentialForLammps::computeEpsilonsFromContactValues()
  && pow(radius_p2 + radius_p2, 2) < pow(HSdiameter - eccentricity_p2, 2) + pow(eccentricity_p2, 2);
   reducedMode = noPPinEE && noCPinEE && noPPinEP;
   if (reducedMode) {
-    computeEpsilonsFromContactValuesReduced();
+    computeGeometricEpsilonsFromContactValuesReduced();
   } else {
-    computeEpsilonsFromContactValuesGeneral();
+    computeGeometricEpsilonsFromContactValuesGeneral();
   }
 }
 
-void
-PotentialForLammps::computeEpsilonsFromContactValuesReduced()
+void PotentialForLammps::computeGeometricEpsilonsFromContactValuesReduced()
 {
   e_min = 1.0;
 
@@ -231,8 +252,7 @@ static double real_dist(double x, double y)
   return std::sqrt(x * x + y * y);
 }
 
-void
-PotentialForLammps::computeEpsilonsFromContactValuesGeneral()
+void PotentialForLammps::computeGeometricEpsilonsFromContactValuesGeneral()
 {
   e_min = 1.0;
   if (computeOmega(colloidRadius, colloidRadius, HSdiameter) == 0.) {
@@ -318,8 +338,101 @@ PotentialForLammps::computeEpsilonsFromContactValuesGeneral()
   e_s2s2 = e[5];
 }
 
+void PotentialForLammps::computeExponentialEpsilonsFromContactValues()
+{
+  computeExponentialEpsilonsFromContactValuesGeneral();
+}
+
+static double computeOmegaExp(double k, double d, double r)
+{
+  return std::exp(-k*(r - d));
+}
+
+void PotentialForLammps::computeExponentialEpsilonsFromContactValuesGeneral()
+{
+  e_min = 1.0;
+
+  if (symmetry == Symmetry::JANUS) {
+    throw std::runtime_error("General case not implemented for Janus");
+  } else if (symmetry == Symmetry::SYMMETRIC) {
+    vEP2 = vEP1;
+    vP1P2 = vP1P1;
+    vP2P2 = vP1P1;
+  }
+
+  Eigen::VectorXd V(6);
+  V << vEE, vEP1, vEP2, vP1P1, vP1P2, vP2P2;
+  // sequence: BB Bs1 Bs2 s1s1 s1s2 s2s2
+  Eigen::MatrixXd f(6,6);
+  double k = 1./delta;
+  // = vEE
+  f(0,0) = computeOmegaExp(k, HSdiameter, real_dist(HSdiameter, 0));
+  f(0,1) = computeOmegaExp(k, HSdiameter - eccentricity_p1, real_dist(HSdiameter, eccentricity_p1)) * 2.;
+  f(0,2) = computeOmegaExp(k, HSdiameter - eccentricity_p2, real_dist(HSdiameter, eccentricity_p2)) * 2.;
+  f(0,3) = computeOmegaExp(k, HSdiameter - 2*eccentricity_p1, real_dist(HSdiameter, 0));
+  f(0,4) = computeOmegaExp(k, HSdiameter - eccentricity_p1 - eccentricity_p2, real_dist(HSdiameter, eccentricity_p1 + eccentricity_p2)) * 2.;
+  f(0,5) = computeOmegaExp(k, HSdiameter - 2*eccentricity_p2, real_dist(HSdiameter, 0));
+  // = VEP1
+  f(1,0) = computeOmegaExp(k, HSdiameter, real_dist(HSdiameter, 0));
+  f(1,1) = computeOmegaExp(k, HSdiameter - eccentricity_p1, real_dist(HSdiameter - eccentricity_p1, 0))
+         + computeOmegaExp(k, HSdiameter - eccentricity_p1, real_dist(HSdiameter, eccentricity_p1));
+  f(1,2) = computeOmegaExp(k, HSdiameter - eccentricity_p2, real_dist(HSdiameter + eccentricity_p2, 0))
+         + computeOmegaExp(k, HSdiameter - eccentricity_p2, real_dist(HSdiameter, -eccentricity_p2));;
+  f(1,3) = computeOmegaExp(k, HSdiameter - 2*eccentricity_p1, real_dist(HSdiameter - eccentricity_p1, eccentricity_p1));
+  f(1,4) = computeOmegaExp(k, HSdiameter - eccentricity_p1 - eccentricity_p2, real_dist(HSdiameter + eccentricity_p2, eccentricity_p1))
+         + computeOmegaExp(k, HSdiameter - eccentricity_p1 - eccentricity_p2, real_dist(HSdiameter - eccentricity_p1, -eccentricity_p2));
+  f(1,5) = computeOmegaExp(k, HSdiameter - 2*eccentricity_p2, real_dist(HSdiameter + eccentricity_p2, -eccentricity_p2));
+  // = VEP2
+  f(2,0) = computeOmegaExp(k, HSdiameter, real_dist(HSdiameter, 0));
+  f(2,1) = computeOmegaExp(k, HSdiameter - eccentricity_p1, real_dist(HSdiameter + eccentricity_p1, 0))
+         + computeOmegaExp(k, HSdiameter - eccentricity_p1, real_dist(HSdiameter, eccentricity_p1));
+  f(2,2) = computeOmegaExp(k, HSdiameter - eccentricity_p2, real_dist(HSdiameter - eccentricity_p2, 0))
+         + computeOmegaExp(k, HSdiameter - eccentricity_p2, real_dist(HSdiameter, eccentricity_p2));;
+  f(2,3) = computeOmegaExp(k, HSdiameter - 2*eccentricity_p1, real_dist(HSdiameter + eccentricity_p1, eccentricity_p1));
+  f(2,4) = computeOmegaExp(k, HSdiameter - eccentricity_p1 - eccentricity_p2, real_dist(HSdiameter - eccentricity_p2, eccentricity_p1))
+         + computeOmegaExp(k, HSdiameter - eccentricity_p1 - eccentricity_p2, real_dist(HSdiameter + eccentricity_p1, -eccentricity_p2));
+  f(2,5) = computeOmegaExp(k, HSdiameter - 2*eccentricity_p2, real_dist(HSdiameter - eccentricity_p2, -eccentricity_p2));
+  // = VP1P1
+  f(3,0) = computeOmegaExp(k, HSdiameter, real_dist(HSdiameter, 0));
+  f(3,1) = computeOmegaExp(k, HSdiameter - eccentricity_p1, real_dist(HSdiameter - eccentricity_p1, 0)) * 2.;
+  f(3,2) = computeOmegaExp(k, HSdiameter - eccentricity_p2, real_dist(HSdiameter + eccentricity_p2, 0)) * 2.;
+  f(3,3) = computeOmegaExp(k, HSdiameter - 2*eccentricity_p1, real_dist(HSdiameter -2*eccentricity_p1, 0));
+  f(3,4) = computeOmegaExp(k, HSdiameter - eccentricity_p1 - eccentricity_p2, real_dist(eccentricity_p2 + HSdiameter - eccentricity_p1, 0)) * 2.;
+  f(3,5) = computeOmegaExp(k, HSdiameter - 2*eccentricity_p2, real_dist(HSdiameter +2*eccentricity_p2, 0));
+  // = VP1P2
+  f(4,0) = computeOmegaExp(k, HSdiameter, real_dist(HSdiameter, 0));
+  f(4,1) = computeOmegaExp(k, HSdiameter - eccentricity_p1, real_dist(HSdiameter + eccentricity_p1, 0))
+         + computeOmegaExp(k, HSdiameter - eccentricity_p1, real_dist(HSdiameter - eccentricity_p1, 0));
+  f(4,2) = computeOmegaExp(k, HSdiameter - eccentricity_p2, real_dist(HSdiameter + eccentricity_p2, 0))
+         + computeOmegaExp(k, HSdiameter - eccentricity_p2, real_dist(HSdiameter - eccentricity_p2, 0));
+  f(4,3) = computeOmegaExp(k, HSdiameter - 2*eccentricity_p1, real_dist(HSdiameter, 0));
+  f(4,4) = computeOmegaExp(k, HSdiameter - eccentricity_p1 - eccentricity_p2, real_dist(eccentricity_p1 + HSdiameter + eccentricity_p2, 0))
+         + computeOmegaExp(k, HSdiameter - eccentricity_p1 - eccentricity_p2, real_dist(HSdiameter - eccentricity_p1 - eccentricity_p2, 0));
+  f(4,5) = computeOmegaExp(k, HSdiameter - 2*eccentricity_p2, real_dist(HSdiameter, 0));
+  // = VP2P2
+  f(5,0) = computeOmegaExp(k, HSdiameter, real_dist(HSdiameter, 0));
+  f(5,1) = computeOmegaExp(k, HSdiameter - eccentricity_p1, real_dist(HSdiameter + eccentricity_p1, 0)) * 2.;
+  f(5,2) = computeOmegaExp(k, HSdiameter - eccentricity_p2, real_dist(HSdiameter - eccentricity_p2, 0)) * 2.;
+  f(5,3) = computeOmegaExp(k, HSdiameter - 2*eccentricity_p1, real_dist(HSdiameter +2*eccentricity_p1, 0));
+  f(5,4) = computeOmegaExp(k, HSdiameter - eccentricity_p1 - eccentricity_p2, real_dist(eccentricity_p1 + HSdiameter - eccentricity_p2, 0)) * 2.;
+  f(5,5) = computeOmegaExp(k, HSdiameter - 2*eccentricity_p2, real_dist(HSdiameter -2*eccentricity_p2, 0));
+
+  // solve fe = V
+  Eigen::VectorXd e(6);
+  //e = f.colPivHouseholderQr().solve(V);
+  e = f.completeOrthogonalDecomposition().solve(V);
+
+  // port solutions
+  e_BB   = e[0];
+  e_Bs1  = e[1];
+  e_Bs2  = e[2];
+  e_s1s1 = e[3];
+  e_s1s2 = e[4];
+  e_s2s2 = e[5];
+}
+
 static double
-computeOmegaRadialDerivative(double Ra, double Rb, double rab)
+compute_dOmega_dr(double Ra, double Rb, double rab)
 {
   // BKL paper, derivative of formula 18
   if (rab >= Ra + Rb || rab <= fabs(Ra - Rb))
@@ -334,9 +447,15 @@ computeOmegaRadialDerivative(double Ra, double Rb, double rab)
   }
 }
 
+static double compute_dOmegaExp_dr(double k, double d, double r)
+{
+  return -k*std::exp(-k*(r - d));
+}
+
 void
 PotentialForLammps::computeSiteSitePotentials()
 {
+  const double k = 1./delta;
   const size_t potentialSteps = size_t(interactionRange / samplingStep) + 2;
 
   uHS.resize(potentialSteps);
@@ -357,25 +476,35 @@ PotentialForLammps::computeSiteSitePotentials()
 
   for (size_t i = 0; i < potentialSteps; ++i) {
     const double r = i * samplingStep;
-    uBB[i] = (e_BB / e_min) * computeOmega(colloidRadius, colloidRadius, r);
-    uBs1[i] = (e_Bs1 / e_min) * computeOmega(colloidRadius, radius_p1, r);
-    uBs2[i] = (e_Bs2 / e_min) * computeOmega(colloidRadius, radius_p2, r);
-    us1s2[i] = (e_s1s2 / e_min) * computeOmega(radius_p1, radius_p2, r);
-    us2s2[i] = (e_s2s2 / e_min) * computeOmega(radius_p2, radius_p2, r);
-    us1s1[i] = (e_s1s1 / e_min) * computeOmega(radius_p1, radius_p1, r);
+    if (mapping == Mapping::GEOMETRIC) {
+      uBB[i]   = (e_BB / e_min)   * computeOmega(colloidRadius, colloidRadius, r);
+      uBs1[i]  = (e_Bs1 / e_min)  * computeOmega(colloidRadius, radius_p1, r);
+      uBs2[i]  = (e_Bs2 / e_min)  * computeOmega(colloidRadius, radius_p2, r);
+      us1s1[i] = (e_s1s1 / e_min) * computeOmega(radius_p1, radius_p1, r);
+      us1s2[i] = (e_s1s2 / e_min) * computeOmega(radius_p1, radius_p2, r);
+      us2s2[i] = (e_s2s2 / e_min) * computeOmega(radius_p2, radius_p2, r);
 
-    fBB[i] = (e_BB / e_min) *
-             computeOmegaRadialDerivative(colloidRadius, colloidRadius, r);
-    fBs1[i] = (e_Bs1 / e_min) *
-              computeOmegaRadialDerivative(colloidRadius, radius_p1, r);
-    fBs2[i] = (e_Bs2 / e_min) *
-              computeOmegaRadialDerivative(colloidRadius, radius_p2, r);
-    fs1s2[i] =
-      (e_s1s2 / e_min) * computeOmegaRadialDerivative(radius_p1, radius_p2, r);
-    fs2s2[i] =
-      (e_s2s2 / e_min) * computeOmegaRadialDerivative(radius_p2, radius_p2, r);
-    fs1s1[i] =
-      (e_s1s1 / e_min) * computeOmegaRadialDerivative(radius_p1, radius_p1, r);
+      fBB[i]   = (e_BB / e_min)   * compute_dOmega_dr(colloidRadius, colloidRadius, r);
+      fBs1[i]  = (e_Bs1 / e_min)  * compute_dOmega_dr(colloidRadius, radius_p1, r);
+      fBs2[i]  = (e_Bs2 / e_min)  * compute_dOmega_dr(colloidRadius, radius_p2, r);
+      fs1s1[i] = (e_s1s1 / e_min) * compute_dOmega_dr(radius_p1, radius_p1, r);
+      fs1s2[i] = (e_s1s2 / e_min) * compute_dOmega_dr(radius_p1, radius_p2, r);
+      fs2s2[i] = (e_s2s2 / e_min) * compute_dOmega_dr(radius_p2, radius_p2, r);
+    } else if (mapping == Mapping::EXPONENTIAL) {
+      uBB[i]   = (e_BB / e_min)   * computeOmegaExp(k, HSdiameter, r);
+      uBs1[i]  = (e_Bs1 / e_min)  * computeOmegaExp(k, HSdiameter - eccentricity_p1, r);
+      uBs2[i]  = (e_Bs2 / e_min)  * computeOmegaExp(k, HSdiameter - eccentricity_p2, r);
+      us1s1[i] = (e_s1s1 / e_min) * computeOmegaExp(k, HSdiameter - 2*eccentricity_p1, r);
+      us1s2[i] = (e_s1s2 / e_min) * computeOmegaExp(k, HSdiameter - eccentricity_p1 - eccentricity_p2, r);
+      us2s2[i] = (e_s2s2 / e_min) * computeOmegaExp(k, HSdiameter - 2*eccentricity_p2, r);
+
+      fBB[i] =   (e_BB / e_min)   * compute_dOmegaExp_dr(k,HSdiameter, r);
+      fBs1[i] =  (e_Bs1 / e_min)  * compute_dOmegaExp_dr(k, HSdiameter - eccentricity_p1, r);
+      fBs2[i] =  (e_Bs2 / e_min)  * compute_dOmegaExp_dr(k, HSdiameter - eccentricity_p2, r);
+      fs1s1[i] = (e_s1s1 / e_min) * compute_dOmegaExp_dr(k, HSdiameter - 2*eccentricity_p1, r);
+      fs1s2[i] = (e_s1s2 / e_min) * compute_dOmegaExp_dr(k, HSdiameter - eccentricity_p1 - eccentricity_p2, r);
+      fs2s2[i] = (e_s2s2 / e_min) * compute_dOmegaExp_dr(k, HSdiameter - 2*eccentricity_p2, r);
+    }
 
     if (r <= HSdiameter) {
       // setting up a Fake Hard Sphere Core
@@ -638,24 +767,17 @@ PotentialForLammps::printRecapFile(std::string const& outputDirName)
       << "\nvP2P2: " << vP2P2;
   }
 
-  if (reducedMode) {
-    std::cout << "Solved using the reduced solution\n";
-  } else {
-    std::cout << "Solved using the general solution\n";
+  recapFile << "\n\nSolution for the ";
+  if (mapping == Mapping::GEOMETRIC) {
+    recapFile << "GEOMETRIC mapping, ";
+    if (reducedMode) {
+      recapFile << "Solved using the reduced solution\n";
+    } else {
+      recapFile << "Solved using the general solution\n";
+    }
+  } else if (mapping == Mapping::EXPONENTIAL) {
+    recapFile << "EXPONENTIAL mapping.\n";
   }
-
-  // overlap volumes at contact
-  //double fBB = computeOmega(colloidRadius, colloidRadius, HSdiameter);
-  //double fBs1 =
-  //  computeOmega(colloidRadius, radius_p1, HSdiameter - eccentricity_p1);
-  //double fs1s1 =
-  //  computeOmega(radius_p1, radius_p1, HSdiameter - 2. * eccentricity_p1);
-  //double fBs2 =
-  //  computeOmega(colloidRadius, radius_p2, HSdiameter - eccentricity_p2);
-  //double fs1s2 = computeOmega(
-  //  radius_p1, radius_p2, HSdiameter - eccentricity_p1 - eccentricity_p2);
-  //double fs2s2 =
-  //  computeOmega(radius_p2, radius_p2, HSdiameter - 2. * eccentricity_p2);
 
   recapFile << "\n\n\nOUTPUT VALUES:\n\n"
 #ifdef DEBUG_MAIN
@@ -872,38 +994,48 @@ PotentialForLammps::printPotentialAlongPathToFile(std::string const& outputDirNa
    *   IV   |  0 -> 90  |     0     |     90   |   180
    *   V    |     90    |  0 -> 90  |     90   |   180
    *   VI   |     90    |    90     |  90 -> 0 |   180
-  */
+   */
 
   double phi = 90;
   double theta = 0.;
   double alpha = 90.;
   double beta = 180.;
-  for (alpha = 90.; alpha > 0.; alpha -= 5.) {
+  /*
+   * last observation: all paths go from zero to the end included,
+   * then an empty line is left. this makes gnuplot and xmgrace recognise the
+   * paths as different blocks and automatically pick up different colors :)
+   */
+  for (alpha = 90.; alpha >= 0.; alpha -= 5.) {
     potentialPathOutputFile << 90. - alpha << '\t'
         << computePotRot(phi, theta, alpha, beta) << '\n';
   }
   alpha = 0.;
-  for (phi = 90.; phi > 0.; phi -= 5.) {
+  potentialPathOutputFile << '\n';
+  for (phi = 90.; phi >= 0.; phi -= 5.) {
     potentialPathOutputFile << 90. + (90. - phi) << '\t'
         << computePotRot(phi, theta, alpha, beta) << '\n';
   }
   phi = 0.;
-  for (alpha = 0.; alpha < 90.; alpha += 5.) {
+  potentialPathOutputFile << '\n';
+  for (alpha = 0.; alpha <= 90.; alpha += 5.) {
     potentialPathOutputFile << 180. + alpha << '\t'
         << computePotRot(phi, theta, alpha, beta) << '\n';
   }
   alpha = 270.;
-  for (phi = 0.; phi < 90.; phi += 5.) {
+  potentialPathOutputFile << '\n';
+  for (phi = 0.; phi <= 90.; phi += 5.) {
     potentialPathOutputFile << 270. + phi << '\t'
         << computePotRot(phi, theta, alpha, beta) << '\n';
   }
   phi = 90.;
-  for (theta = 0.; theta < 90.; theta += 5) {
+  potentialPathOutputFile << '\n';
+  for (theta = 0.; theta <= 90.; theta += 5) {
     potentialPathOutputFile << 360. + theta << '\t'
         << computePotRot(phi, theta, alpha, beta) << '\n';
   }
   theta = 90.;
-  for (alpha = 90.; alpha > 0.; alpha -= 5.) {
+  potentialPathOutputFile << '\n';
+  for (alpha = 90.; alpha >= 0.; alpha -= 5.) {
     potentialPathOutputFile << 450. + (90. - alpha) << '\t'
         << computePotRot(phi, theta, alpha, beta) << '\n';
   }

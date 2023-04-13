@@ -8,6 +8,11 @@
 # it will only appear on the output directory, so choose freely
 model_name="your-model-name"
 
+# type of mapping, two are available:
+# g -> geometrical, from the original paper
+# e -> exponential, from the paper with ....
+mapping=g
+
 # symmetry of the colloid that you want to create.
 #              accepted values:
 # janus -> janus colloids with a single patch
@@ -77,11 +82,11 @@ pushd sources
     ./build.sh
   fi
 
-  target="../target_${model_name}_${symmetry}_epsilons"
+  target="../target_${model_name}_${symmetry}_${mapping}_epsilons"
   [ -d $target ] && rm -rf $target
   mkdir -p $target
 
   [ $ipc_model -eq 1 ] && is_ipc="-p"
-  ./compute.out -e $is_ipc -m $symmetry -i inputfile -o $target
+  ./compute.out -e $is_ipc -s $symmetry -m $mapping -i inputfile -o $target
   rm inputfile
 popd 
