@@ -9,4 +9,8 @@ if [ -z "$eigen" ]; then
   popd
 fi
 
-g++ -std=c++14 -I ../../dependencies/eigen/ printPotential.cpp main.cpp -o compute.out
+mkdir -p bld
+pushd bld
+  cmake ../
+  make -j4
+popd

@@ -3,3 +3,4 @@
 *.swp
 *.out
 4-postprocess/bld
+1-make_potentials/sources/bld/

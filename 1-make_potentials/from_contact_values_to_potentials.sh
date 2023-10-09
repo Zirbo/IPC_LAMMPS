@@ -80,15 +80,15 @@ pushd sources
   echo $vP1P2 >> inputfile
   echo $vP2P2 >> inputfile
 
-  if [ ! -x compute.out ]; then
-    ./build.sh
-  fi
+  ./build.sh
 
   target="../target_${model_name}_${symmetry}_${mapping}_contact"
   [ -d $target ] && rm -rf $target
   mkdir -p $target
 
   [ $ipc_model -eq 1 ] && is_ipc="-p"
-  ./compute.out -c $is_ipc -s $symmetry -m $mapping -i inputfile -o $target
+  ./bld/lammps_pot_generator \
+    -c $is_ipc -s $symmetry -m $mapping \
+    -i inputfile -o $target
   rm inputfile
 popd 

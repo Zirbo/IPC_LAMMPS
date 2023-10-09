@@ -78,15 +78,15 @@ pushd sources
   echo $epsP1P2 >> inputfile
   echo $epsP2P2 >> inputfile
 
-  if [ ! -x compute.out ]; then
-    ./build.sh
-  fi
+  ./build.sh
 
   target="../target_${model_name}_${symmetry}_${mapping}_epsilons"
   [ -d $target ] && rm -rf $target
   mkdir -p $target
 
   [ $ipc_model -eq 1 ] && is_ipc="-p"
-  ./compute.out -e $is_ipc -s $symmetry -m $mapping -i inputfile -o $target
+  ./bld/lammps_pot_generator \
+    -e $is_ipc -s $symmetry -m $mapping \
+    -i inputfile -o $target
   rm inputfile
 popd 
