@@ -627,7 +627,7 @@ PotentialForLammps::printRadialPotentialsToFile(
     plotOrientations.push_back("p2p2");
   }
 
-  for (int type = 0; type < plotOrientations.size(); ++type) {
+  for (int type = 0; type < (int) plotOrientations.size(); ++type) {
     bool saved = false;
     // create the output file
     std::string fileName = dirName + '/' + plotOrientations[type] + ".dat";
@@ -692,7 +692,9 @@ PotentialForLammps::printRadialPotentialsToFile(
         ip2p1 = dist(r - eccentricity_p2 + eccentricity_p1, 0);
         ip2C  = dist(r - eccentricity_p2, 0);
         ip2p2 = dist(r - 2*eccentricity_p2, 0);
-      }
+      } else {
+        throw std::runtime_error("Plot orientation: bug has been found");
+	  }
       double printPotential =
         ppot(uHS, iCC) + ppot(uBB, iCC) + ppot(uBs1, iCp1) + ppot(uBs2, iCp2)
         + ppot(us1s1, ip1p1) + ppot(uBs1, ip1C) + ppot(us1s2, ip1p2)
