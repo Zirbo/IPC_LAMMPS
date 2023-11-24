@@ -25,6 +25,9 @@ symmetry="asymm"
 # any other value disables it
 ipc_model=0
 
+# lower threshold value for both potential and force
+cutoff=0.0001
+
 # parameters for the first patch
 
 
@@ -67,6 +70,7 @@ pushd sources
   # generate inputfile
   echo $model_name > inputfile
   echo $delta >> inputfile
+  echo $cutoff >> inputfile
   echo $ecc1 >> inputfile
   echo $rad1 >> inputfile
   echo $vEE >> inputfile
