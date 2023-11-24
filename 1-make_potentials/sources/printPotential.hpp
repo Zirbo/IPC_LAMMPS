@@ -55,7 +55,7 @@ private:
   double eccentricity_p2, radius_p2;
   double HSdiameter, fakeHScoefficient, fakeHSexponent;
 
-  double samplingStep, cutoffValue;
+  double samplingStep, higherCutoff, lowerCutoff;
 
   std::vector<double> uHS, uBB, uBs1, uBs2, us1s2, us1s1, us2s2;
   std::vector<double> fHS, fBB, fBs1, fBs2, fs1s2, fs1s1, fs2s2;

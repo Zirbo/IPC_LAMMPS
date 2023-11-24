@@ -2,6 +2,7 @@
 
 #include <sys/stat.h>
 
+#include <cstdlib>
 #include <cmath>
 #include <fstream>
 #include <iomanip>
@@ -26,6 +27,7 @@ PotentialForLammps::initFromEpsilons(std::string const& inputFileName)
   std::string modelName;
   inputFile >> modelName;
   inputFile >> delta;
+  inputFile >> lowerCutoff;
   inputFile >> eccentricity_p1;
   inputFile >> radius_p1;
   inputFile >> e_BB >> e_Bs1 >> e_s1s1;
@@ -58,6 +60,7 @@ PotentialForLammps::readContactValues(std::string const& inputFileName)
   std::string modelName;
   inputFile >> modelName;
   inputFile >> delta;
+  inputFile >> lowerCutoff;
   inputFile >> eccentricity_p1;
   inputFile >> radius_p1;
   inputFile >> vEE >> vEP1 >> vP1P1;
@@ -101,7 +104,7 @@ PotentialForLammps::PotentialForLammps(const std::string& inputFileName,
   fakeHScoefficient = 500;
   fakeHSexponent = 15;
   samplingStep = 1.0e-05;
-  cutoffValue = 1.0e+06;
+  higherCutoff = 1.0e+06;
 
   colloidRadius = 0.5 * (HSdiameter + delta);
 
@@ -515,6 +518,16 @@ PotentialForLammps::computeSiteSitePotentials()
   }
 }
 
+static void
+replaceInFile(const std::string& fileName, const std::string& from, const std::string& to)
+{
+  std::stringstream ss;
+  ss << "sed -i 's/" << from << "/" << to << "/g' " << fileName;
+  if (std::system(ss.str().c_str()) != 0) {
+    std::runtime_error(std::string("Problem replacing in file ") + fileName );
+  }
+}
+
 void
 PotentialForLammps::printLAMMPSpotentialsToFile(
   const std::string& outputDirName)
@@ -540,9 +553,9 @@ PotentialForLammps::printLAMMPSpotentialsToFile(
     std::string fileName = dirName + "/" + interactionType[type] + ".table";
     std::ofstream potentialOutputFile(fileName);
     potentialOutputFile << "# potentials for lammps\n\n"
-                        << interactionType[type] << "\nN " << potentialSteps - 1
-                        << "\n\n";
-    // -1 because we don't print r=0
+                        << interactionType[type] << "\nN <potentialSteps>\n\n";
+    size_t actualPotentialSize = potentialSteps - 1; //-1 because we don't print r=0
+
     potentialOutputFile << std::scientific << std::setprecision(6);
 
     for (size_t i = 1; i < potentialSteps; ++i) {
@@ -553,30 +566,49 @@ PotentialForLammps::printLAMMPSpotentialsToFile(
       double printPotential, printForce;
       if (type == 0) {
         printPotential =
-          (uHS[i] + uBB[i] > cutoffValue) ? cutoffValue : uHS[i] + uBB[i];
-        printForce = ((fHS[i] + fBB[i]) * r < -cutoffValue)
-                       ? -cutoffValue
+          (uHS[i] + uBB[i] > higherCutoff) ? higherCutoff : uHS[i] + uBB[i];
+        printForce = ((fHS[i] + fBB[i]) * r < -higherCutoff)
+                       ? -higherCutoff
                        : -(fHS[i] + fBB[i]);
       } else if (type == 1) {
-        printPotential = (uBs1[i] > cutoffValue) ? cutoffValue : uBs1[i];
-        printForce = (fBs1[i] * r < -cutoffValue) ? -cutoffValue : -fBs1[i];
+        printPotential = (uBs1[i] > higherCutoff) ? higherCutoff : uBs1[i];
+        printForce = (fBs1[i] * r < -higherCutoff) ? -higherCutoff : -fBs1[i];
       } else if (type == 2) {
-        printPotential = (uBs2[i] > cutoffValue) ? cutoffValue : uBs2[i];
-        printForce = (fBs2[i] * r < -cutoffValue) ? -cutoffValue : -fBs2[i];
+        printPotential = (uBs2[i] > higherCutoff) ? higherCutoff : uBs2[i];
+        printForce = (fBs2[i] * r < -higherCutoff) ? -higherCutoff : -fBs2[i];
       } else if (type == 3) {
-        printPotential = (us1s2[i] > cutoffValue) ? cutoffValue : us1s2[i];
-        printForce = (fs1s2[i] * r < -cutoffValue) ? -cutoffValue : -fs1s2[i];
+        printPotential = (us1s2[i] > higherCutoff) ? higherCutoff : us1s2[i];
+        printForce = (fs1s2[i] * r < -higherCutoff) ? -higherCutoff : -fs1s2[i];
       } else if (type == 4) {
-        printPotential = (us1s1[i] > cutoffValue) ? cutoffValue : us1s1[i];
-        printForce = (fs1s1[i] * r < -cutoffValue) ? -cutoffValue : -fs1s1[i];
+        printPotential = (us1s1[i] > higherCutoff) ? higherCutoff : us1s1[i];
+        printForce = (fs1s1[i] * r < -higherCutoff) ? -higherCutoff : -fs1s1[i];
       } else if (type == 5) {
-        printPotential = (us2s2[i] > cutoffValue) ? cutoffValue : us2s2[i];
-        printForce = (fs2s2[i] * r < -cutoffValue) ? -cutoffValue : -fs2s2[i];
+        printPotential = (us2s2[i] > higherCutoff) ? higherCutoff : us2s2[i];
+        printForce = (fs2s2[i] * r < -higherCutoff) ? -higherCutoff : -fs2s2[i];
       }
       // finally, you can print
       potentialOutputFile << printPotential << '\t' << printForce << '\n';
+
+      // apply cutoff (maybe)
+      if (
+        // geometric: apply cutoff if and only if exactly zero
+        (mapping == Mapping::GEOMETRIC && (std::fabs(printForce) == 0. && std::fabs(printPotential) == 0.))
+        ||
+        // exp: apply cutoff from parameter in input -> would catastrophically fail on inflection points, but exponentials are monotonous
+        (mapping == Mapping::EXPONENTIAL && (std::fabs(printForce) < lowerCutoff || std::fabs(printPotential) < lowerCutoff))
+        ) {
+        actualPotentialSize = i - 1;
+        break;
+      }
     }
     potentialOutputFile.close();
+
+    // finally we have to sed <potentialSteps> in the file
+    replaceInFile(fileName, "<potentialSteps>", std::to_string(actualPotentialSize));
+
+    if (actualPotentialSize == potentialSteps - 1) {
+      std::cout << "No cutoff was applied for site-site interaction " << interactionType[type] << '\n';
+    }
   }
 }
 
