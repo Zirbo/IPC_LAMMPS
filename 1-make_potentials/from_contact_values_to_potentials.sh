@@ -26,7 +26,8 @@ symmetry="asymm"
 ipc_model=0
 
 # lower threshold value for both potential and force
-cutoff=0.0001
+# cutoff=0.0001
+cutoff=$1
 
 # parameters for the first patch
 
@@ -95,4 +96,4 @@ pushd sources
     -c $is_ipc -s $symmetry -m $mapping \
     -i inputfile -o $target
   rm inputfile
-popd 
+popd
