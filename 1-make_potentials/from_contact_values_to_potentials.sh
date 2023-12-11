@@ -28,6 +28,7 @@ ipc_model=0
 # lower threshold value for both potential and force
 cutoff=0.0001
 
+
 # parameters for the first patch
 
 
@@ -46,6 +47,10 @@ vP1P1=4.0   # for JANUS -> patch-patch
 
 
 
+# parameters for regualble softness
+fakeHScoefficient=500
+fakeHSexponent=15
+
 
 # parameters for the second patch -- **IGNORED** for Janus and symmetric
 # patch_2 eccentricity
@@ -56,7 +61,6 @@ rad2=0.38
 vEP2=-1.0
 vP1P2=4.0
 vP2P2=4.0
-
 
 
 
@@ -76,6 +80,9 @@ pushd sources
   echo $vEE >> inputfile
   echo $vEP1 >> inputfile
   echo $vP1P1 >> inputfile
+  
+  echo $fakeHScoefficient >> inputfile
+  echo $fakeHSexponent >> inputfile
 
 
   echo $ecc2 >> inputfile
@@ -83,6 +90,7 @@ pushd sources
   echo $vEP2 >> inputfile
   echo $vP1P2 >> inputfile
   echo $vP2P2 >> inputfile
+
 
   ./build.sh
 
@@ -95,4 +103,4 @@ pushd sources
     -c $is_ipc -s $symmetry -m $mapping \
     -i inputfile -o $target
   rm inputfile
-popd 
+popd

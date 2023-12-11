@@ -32,6 +32,9 @@ PotentialForLammps::initFromEpsilons(std::string const& inputFileName)
   inputFile >> radius_p1;
   inputFile >> e_BB >> e_Bs1 >> e_s1s1;
   inputFile >> e_min;
+  inputFile >> fakeHScoefficient;
+  inputFile >> fakeHSexponent;
+
   if (symmetry == Symmetry::JANUS) {
     e_Bs2 = 0;
     e_s2s2 = 0;
@@ -45,6 +48,7 @@ PotentialForLammps::initFromEpsilons(std::string const& inputFileName)
     inputFile >> radius_p2;
     inputFile >> e_Bs2 >> e_s1s2 >> e_s2s2;
   }
+
 
   inputFile.close();
 }
@@ -64,6 +68,9 @@ PotentialForLammps::readContactValues(std::string const& inputFileName)
   inputFile >> eccentricity_p1;
   inputFile >> radius_p1;
   inputFile >> vEE >> vEP1 >> vP1P1;
+  inputFile >> fakeHScoefficient;
+  inputFile >> fakeHSexponent;
+
   if (symmetry == Symmetry::ASYMMETRIC) {
     inputFile >> eccentricity_p2;
     inputFile >> radius_p2;
@@ -101,8 +108,6 @@ PotentialForLammps::PotentialForLammps(const std::string& inputFileName,
 
   // define geometry
   HSdiameter = 1.0;
-  fakeHScoefficient = 500;
-  fakeHSexponent = 15;
   samplingStep = 1.0e-05;
   higherCutoff = 1.0e+06;
 

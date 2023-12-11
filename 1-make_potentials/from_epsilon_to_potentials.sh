@@ -28,6 +28,7 @@ ipc_model=0
 # lower threshold value for both potential and force
 cutoff=0.0001
 
+
 # parameters for the first patch
 
 
@@ -38,12 +39,18 @@ delta=0.2
 ecc1=0.22
 # patch radius
 rad1=0.38
+
 # epsilons
 epsEE=0.245728
 epsEP1=-3.11694
 epsP1P1=21.2298
 # potential normalization
 emin=0.142495
+
+# parameters for regualble softness
+fakeHScoefficient=500
+fakeHSexponent=15
+
 
 # parameters for the second patch -- **IGNORED** for Janus and symmetric
 # patch_2 eccentricity
@@ -71,16 +78,19 @@ pushd sources
   echo $cutoff >> inputfile
   echo $ecc1 >> inputfile
   echo $rad1 >> inputfile
-  echo $epsEE >> inputfile
-  echo $epsEP1 >> inputfile
-  echo $epsP1P1 >> inputfile
-  echo $emin >> inputfile
+  echo $vEE >> inputfile
+  echo $vEP1 >> inputfile
+  echo $vP1P1 >> inputfile
+  
+  echo $fakeHScoefficient >> inputfile
+  echo $fakeHSexponent >> inputfile
+
 
   echo $ecc2 >> inputfile
   echo $rad2 >> inputfile
-  echo $epsEP2 >> inputfile
-  echo $epsP1P2 >> inputfile
-  echo $epsP2P2 >> inputfile
+  echo $vEP2 >> inputfile
+  echo $vP1P2 >> inputfile
+  echo $vP2P2 >> inputfile
 
   ./build.sh
 
@@ -93,4 +103,4 @@ pushd sources
     -e $is_ipc -s $symmetry -m $mapping \
     -i inputfile -o $target
   rm inputfile
-popd 
+popd
