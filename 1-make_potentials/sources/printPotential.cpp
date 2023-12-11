@@ -68,7 +68,6 @@ PotentialForLammps::readContactValues(std::string const& inputFileName)
   inputFile >> eccentricity_p1;
   inputFile >> radius_p1;
   inputFile >> vEE >> vEP1 >> vP1P1;
-
   inputFile >> fakeHScoefficient;
   inputFile >> fakeHSexponent;
 
@@ -109,8 +108,6 @@ PotentialForLammps::PotentialForLammps(const std::string& inputFileName,
 
   // define geometry
   HSdiameter = 1.0;
-  // fakeHScoefficient = 500;
-  // fakeHSexponent = 15;
   samplingStep = 1.0e-05;
   higherCutoff = 1.0e+06;
 

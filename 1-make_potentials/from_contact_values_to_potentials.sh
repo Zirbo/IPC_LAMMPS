@@ -28,6 +28,7 @@ ipc_model=0
 # lower threshold value for both potential and force
 cutoff=0.0001
 
+
 # parameters for the first patch
 
 
@@ -43,6 +44,7 @@ rad1=0.38
 vEE=0.1     # for JANUS -> backside-backside
 vEP1=-1.0   # for JANUS -> backside-patch
 vP1P1=4.0   # for JANUS -> patch-patch
+
 
 
 # parameters for regualble softness

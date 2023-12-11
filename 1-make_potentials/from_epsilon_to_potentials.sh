@@ -39,6 +39,7 @@ delta=0.2
 ecc1=0.22
 # patch radius
 rad1=0.38
+
 # epsilons
 epsEE=0.245728
 epsEP1=-3.11694
