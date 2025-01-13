@@ -1,10 +1,10 @@
-# OSPC for LAMMPS
+# IPC for LAMMPS
 
-Implementation of Overlapping Sphere Patchy Colloids for LAMMPS.
+Implementation of Inverse Patchy Colloids for LAMMPS.
 
-We provide all that is necessary to simulate OSPCs with LAMMPS:
+We provide all that is necessary to simulate IPCs with LAMMPS:
 sample .in files and startingstates, a program to print and tabulate the
-OSPC potential, and generators of startingstates.
+IPC potential, and generators of startingstates.
 Anybody can start simulating IPCs in LAMMPS in few minutes.
 For any help, feel free to contact us here on GitHub.
 
@@ -74,7 +74,7 @@ interaction range, or viceversa. Check the inline help with -h.
 
 ## 2-startingstate_creators
 Contains Python3 scripts that can be used to generate FCC startingstates
-for Janus and two-patch OSPCs. There's also one cubic lattice for two-patch only.
+for Janus and two-patch IPCs. There's also one cubic lattice for two-patch only.
 All of them have an inline help, so run them with the -h flag to get explanations.
 
 ## 3-lammps_inputfiles
@@ -102,8 +102,8 @@ $ vmd -e vmdscript.tk </path/to/trajectory.lammpstrj>
 !!! currently WIP !!!
 
  - does not support Janus
- - does not support Asymmetric OSPCs
- - works with any symmetric OSPC, although the code still refers to IPCs
+ - does not support Asymmetric IPCs
+ - works with any symmetric IPC, although the code still refers to IPCs
 
 Run the build.sh script to obtain the binary;
 a c++11-compatible version of g++ and CMake 3.5 are required.
@@ -112,7 +112,7 @@ Run the obtained binary without arguments to see what arguments are required.
 You need a valid trajectory, the directory with the potentials used to run the
 simulation, and an inputfile with eccentricity and patch radius.
 
-Will be extended to all OSPCs as soon as possible :)
+Will be extended to all IPCs as soon as possible :)
 
 ## 9-advanced
 Contains other startingstate generators and visualization tools
@@ -122,7 +122,7 @@ so use them at your own risk ;)
 
 
 ## Have fun!
-We hope that you will have as much fun playing with OSPCs as we did :D
+We hope that you will have as much fun playing with IPCs as we did :D
 S.F. & E.B.
 
 ## References
