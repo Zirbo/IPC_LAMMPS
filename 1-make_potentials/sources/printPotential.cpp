@@ -266,10 +266,14 @@ void PotentialForLammps::computeGeometricEpsilonsFromContactValuesGeneral()
   if (computeOmega(colloidRadius, colloidRadius, HSdiameter) == 0.) {
     std::cout << "WARNING: fBB is zero. Did you set delta to zero?\n"
               << "Overriding e_BB and vEE to also be zero\n\n";
+    e_BB = 0;
+    vEE = 0;
   }
 
   if (symmetry == Symmetry::JANUS) {
-    throw std::runtime_error("General case not implemented for Janus");
+    e_Bs2 = 0;
+    e_s2s2 = 0;
+    e_s1s2 = 0;
   } else if (symmetry == Symmetry::SYMMETRIC) {
     vEP2 = vEP1;
     vP1P2 = vP1P1;
@@ -361,7 +365,9 @@ void PotentialForLammps::computeExponentialEpsilonsFromContactValuesGeneral()
   e_min = 1.0;
 
   if (symmetry == Symmetry::JANUS) {
-    throw std::runtime_error("General case not implemented for Janus");
+    e_Bs2 = 0;
+    e_s2s2 = 0;
+    e_s1s2 = 0;
   } else if (symmetry == Symmetry::SYMMETRIC) {
     vEP2 = vEP1;
     vP1P2 = vP1P1;

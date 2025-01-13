@@ -8,6 +8,24 @@ OSPC potential, and generators of startingstates.
 Anybody can start simulating IPCs in LAMMPS in few minutes.
 For any help, feel free to contact us here on GitHub.
 
+### Installation Instructions
+Requires: a version of g++ recent enough to compile c++14, and CMake 3.5 or newer.
+
+There are two ways to install this package.
+
+The simplest is to use git: clone the repo using `git clone https://github.com/Zirbo/IPC_LAMMPS.git`.
+That's it. The scripts will take care of everything else.
+
+If you don't want to use git, it's a bit more complicated.
+You have to download the repository as zip, unpack it, install the Eigen library via package manager
+or from source, and the point to it in the compilation instructions in the last line of
+`IPC_LAMMPS/1-make_potentials/sources/CMakeLists.txt`.
+You might come to issues if the version of g++ and Eigen that you are using are not compatible
+with each other.
+
+
+
+
 We have the following directories:
 
 ## 1-make_potentials
