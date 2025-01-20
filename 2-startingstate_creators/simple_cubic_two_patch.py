@@ -4,7 +4,7 @@
 
 import argparse
 from math import cos, sin, sqrt, pi
-from numpy.random import ranf
+import random
 
 parser = argparse.ArgumentParser(description='Creates a LAMMPS starting configuration.')
 parser.add_argument('nOSPCsSide', metavar='N', type=int, help='cubic root of the number of particles')
@@ -60,9 +60,9 @@ for iz in range(0, args.nOSPCsSide):
             # ospc center
             i = 1 + 3*(ix + iy*args.nOSPCsSide + iz*args.nOSPCsPlane)
             ospcNum = int(i/3) + 1
-            x = (0.5 + ix + 0.1*ranf())*args.sideStep
-            y = (0.5 + iy + 0.1*ranf())*args.sideStep
-            z = (0.5 + iz + 0.1*ranf())*args.sideStep
+            x = (0.5 + ix + 0.1*random.random())*args.sideStep
+            y = (0.5 + iy + 0.1*random.random())*args.sideStep
+            z = (0.5 + iz + 0.1*random.random())*args.sideStep
             outputFile.write("\n" + str(i).rjust(10) +
                   str(ospcNum).rjust(10) +
                   str(1).rjust(10) +
@@ -71,9 +71,9 @@ for iz in range(0, args.nOSPCsSide):
                  '{:3.8f}'.format(y).rjust(16) +
                  '{:3.8f}'.format(z).rjust(16) )
             # create random unit vector
-            px = ranf() 
-            py = ranf()
-            pz = ranf()
+            px = random.random()
+            py = random.random()
+            pz = random.random()
             mod = (px**2 + py**2 + pz**2)**(0.5)
             px /= mod
             py /= mod

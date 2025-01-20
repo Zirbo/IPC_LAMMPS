@@ -4,7 +4,7 @@
 
 import argparse
 from math import cos, sin, sqrt, pi
-from numpy.random import ranf
+import random
 
 parser = argparse.ArgumentParser(description='Creates a LAMMPS starting configuration.')
 parser.add_argument('nOSPCsSide', metavar='N', type=int, help='number of OSPCs: 4*N**2')
@@ -64,9 +64,9 @@ for r in lattice_roots:
                 # ospc center
                 i = 1 + 2*(ix + iy*args.nOSPCsSide + iz*args.nOSPCsPlane + args.nOSPCsCube*r[3])
                 ospcNum = int(i/2) + 1
-                x = (0.5 + r[0] + ix + 0.03*ranf())*args.sideStep
-                y = (0.5 + r[1] + iy + 0.03*ranf())*args.sideStep
-                z = (0.5 + r[2] + iz + 0.03*ranf())*args.sideStep
+                x = (0.5 + r[0] + ix + 0.03*random.random())*args.sideStep
+                y = (0.5 + r[1] + iy + 0.03*random.random())*args.sideStep
+                z = (0.5 + r[2] + iz + 0.03*random.random())*args.sideStep
                 outputFile.write("\n" + str(i).rjust(10) +
                       str(ospcNum).rjust(10) +
                       str(1).rjust(10) +
@@ -75,9 +75,9 @@ for r in lattice_roots:
                      '{:3.8f}'.format(y).rjust(16) +
                      '{:3.8f}'.format(z).rjust(16) )
                 # create random unit vector
-                px = ranf() 
-                py = ranf()
-                pz = ranf()
+                px = random.random()
+                py = random.random()
+                pz = random.random()
                 mod = (px**2 + py**2 + pz**2)**(0.5)
                 px /= mod
                 py /= mod
