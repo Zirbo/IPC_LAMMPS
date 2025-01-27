@@ -72,9 +72,9 @@ double IPCneighboursAnalysis::computePotentialBetweenTwoIPCs(IPCpotential const&
 
         const size_t dist = size_t( siteSiteDistance/potential.spacing );
         if (j == 0 || j == 1 || j == 2 || j == 5) {
-            uij += potential.uBs[dist];
+            uij += dist < potential.uBs.size() ? potential.uBs[dist] : 0;
         } else if (j == 3 || j == 4 || j == 6 || j == 7) {
-            uij += potential.uss[dist];
+            uij += dist < potential.uss.size() ? potential.uss[dist] : 0;
         } else {
             std::cerr << __func__ << ":: something bad happened!";
             exit(1);
