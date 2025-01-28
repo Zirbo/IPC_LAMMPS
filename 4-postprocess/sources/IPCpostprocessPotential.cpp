@@ -13,7 +13,7 @@ void IPCpotential::initialize(std::string const& potentialsDir) {
     double spacingBS = 0.;
     readFile(fileName, spacingBS, uBs);
 
-    fileName = potentialsDir + "/Bs1.table";
+    fileName = potentialsDir + "/s1s1.table";
     double spacingSS = 0.;
     readFile(fileName, spacingSS, uss);
 
