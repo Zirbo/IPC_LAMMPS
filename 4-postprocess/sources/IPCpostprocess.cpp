@@ -132,7 +132,7 @@ bool IPCpostprocess::readNewConfiguration() {
     if (currentStep > startStep && currentStep < finalStep)
         computeOrientations();
 
-    std::cout << currentStep << std::endl; //"\n";
+    std::cout << currentStep << '/' << finalStep << std::endl;
     return true;
 }
 

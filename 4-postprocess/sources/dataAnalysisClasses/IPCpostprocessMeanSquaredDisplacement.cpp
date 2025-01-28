@@ -19,7 +19,7 @@ void IPCmsd::accumulateAndPrint(const Ensemble &system) {
 
 void IPCmsd::computeMSD(const Ensemble &system) {
     ++timeCounter;
-    std::cout << timeCounter << std::endl;
+    //std::cout << timeCounter << std::endl;
     Triad meanSquaredDisplacement_d = {0.0, 0.0, 0.0};
 
     for (IPC ipc: system) {
